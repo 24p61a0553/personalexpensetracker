@@ -23,12 +23,14 @@ Thumbs.db
 
 # Local sensitive overrides (never push your local passwords!)
 tomcat_db.properties
+!src/db.properties
 local.properties
 # Database credentials and environment files
 .env
 .env.*
 !.env.example
 db.properties
+!src/db.properties
 *.pem
 *.key
 
