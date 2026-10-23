@@ -152,33 +152,36 @@ Before running the application locally, ensure you have:
 
 ---
 
-### Stage 2: Configure Database Credentials (No Hardcoding)
+### Stage 2: Configure Database Credentials (Exclusively via Environment Variables)
 
-Credentials can be supplied in **any** of the following ways (in priority order):
+Credentials are never stored or hardcoded in source code or WAR files. Supply credentials using **Environment Variables**:
 
-1. **External Tomcat Configuration (Recommended for Local Dev):**
-   Create or edit `C:\apache-tomcat-9\conf\db.properties`:
-   ```properties
-   db.host=localhost
-   db.port=3306
-   db.name=expense_tracker
-   db.user=root
-   db.pass=YourMySQLPassword
-   ```
-2. **Environment Variables:**
+1. **Environment Variables (Recommended):**
    ```cmd
    set DB_HOST=localhost
    set DB_PORT=3306
    set DB_NAME=expense_tracker
-   set DB_USER=root
-   set DB_PASS=YourMySQLPassword
+   set DB_USER=<YOUR_DB_USER>
+   set DB_PASS=<YOUR_DB_PASSWORD>
    ```
-   Or set a unified URL:
+   Or set a unified database connection URL:
    ```cmd
-   set DATABASE_URL=mysql://root:YourPassword@localhost:3306/expense_tracker
+   set DATABASE_URL=mysql://<YOUR_DB_USER>:<YOUR_DB_PASSWORD>@localhost:3306/expense_tracker
    ```
-3. **War-bundled properties:**
-   Edit `src/db.properties` before building.
+
+2. **Local Development `.env` File (Gitignored):**
+   Copy `.env.example` to `.env` in the project root:
+   ```properties
+   DB_HOST=localhost
+   DB_PORT=3306
+   DB_NAME=expense_tracker
+   DB_USER=<YOUR_DB_USER>
+   DB_PASS=<YOUR_DB_PASSWORD>
+   ```
+   *(The `.env` file is excluded by `.gitignore` and is never committed to GitHub).*
+
+3. **External Tomcat Configuration (Local Uncommitted Fallback):**
+   External file outside the repository: `C:\apache-tomcat-9\conf\db.properties`.
 
 ---
 

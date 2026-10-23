@@ -1,23 +1,32 @@
 package com.expensetracker.util;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 /**
  * Enterprise Database Connection Manager for MySQL.
  * 
- * Supports flexible configuration loading in priority order:
- * 1. JVM System properties (-Ddb.pass=..., -Ddb.user=..., -Ddb.config.file=...)
- * 2. Environment variables (DATABASE_URL, DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS)
- * 3. External Tomcat configuration file ($CATALINA_BASE/conf/db.properties)
- * 4. External working directory configuration file (./db.properties)
- * 5. Classpath configuration file (WEB-INF/classes/db.properties)
+ * Obtains database configuration exclusively from environment variables:
+ * - DB_HOST: Hostname of MySQL server (default: localhost)
+ * - DB_PORT: Port number (default: 3306)
+ * - DB_NAME: Database name (default: expense_tracker)
+ * - DB_USER: Database username
+ * - DB_PASS: Database password
+ * - DB_SSL: Whether to enforce SSL (true/false)
+ * - DATABASE_URL / MYSQL_URL: Optional unified database URI
+ * 
+ * For local development, also supports reading a gitignored .env file.
+ * Contains no hardcoded passwords, usernames, or secrets.
  */
 public class DBConnection {
 
@@ -30,6 +39,7 @@ public class DBConnection {
     private static long lastLoadTime = 0;
     private static final long RELOAD_INTERVAL_MS = 10000;
     private static boolean isDbAvailable = false;
+    private static final Map<String, String> localEnvMap = new HashMap<>();
 
     static {
         loadDriver();
@@ -37,10 +47,10 @@ public class DBConnection {
     }
 
     public static boolean isProductionEnvironment() {
-        return "true".equalsIgnoreCase(System.getenv("RENDER"))
-                || System.getenv("RENDER_SERVICE_ID") != null
-                || "production".equalsIgnoreCase(System.getenv("ENVIRONMENT"))
-                || "production".equalsIgnoreCase(System.getenv("APP_ENV"))
+        return "true".equalsIgnoreCase(getEnv("RENDER"))
+                || getEnv("RENDER_SERVICE_ID") != null
+                || "production".equalsIgnoreCase(getEnv("ENVIRONMENT"))
+                || "production".equalsIgnoreCase(getEnv("APP_ENV"))
                 || "production".equalsIgnoreCase(System.getProperty("app.env"));
     }
 
@@ -55,128 +65,123 @@ public class DBConnection {
         }
     }
 
-    public static synchronized void loadConfiguration() {
-        Properties props = new Properties();
-        configSource = "defaults";
+    /**
+     * Resolves an environment variable value.
+     * Checks System.getenv() first, then local .env map, then JVM system properties.
+     */
+    private static String getEnv(String name) {
+        String val = System.getenv(name);
+        if (val != null && !val.trim().isEmpty()) {
+            return val.trim();
+        }
+        val = localEnvMap.get(name);
+        if (val != null && !val.trim().isEmpty()) {
+            return val.trim();
+        }
+        val = System.getProperty(name);
+        if (val != null && !val.trim().isEmpty()) {
+            return val.trim();
+        }
+        return null;
+    }
 
-        // 1. JVM system property -Ddb.config.file=...
-        String customConfigPath = System.getProperty("db.config.file");
-        boolean loaded = false;
+    private static String getEnv(String name, String defaultValue) {
+        String val = getEnv(name);
+        return (val != null && !val.trim().isEmpty()) ? val : defaultValue;
+    }
 
-        if (customConfigPath != null && !customConfigPath.trim().isEmpty()) {
-            File customFile = new File(customConfigPath.trim());
-            if (customFile.exists() && customFile.canRead()) {
-                try (InputStream fis = new FileInputStream(customFile)) {
-                    props.load(fis);
-                    configSource = "system property file (" + customFile.getAbsolutePath() + ")";
-                    loaded = true;
-                } catch (Exception e) {
-                    System.err.println("[DBConnection] Could not read custom config file: " + e.getMessage());
+    /**
+     * Attempts to load local environment configuration from a gitignored .env file
+     * or external uncommitted config for local development if environment variables are not set in the OS.
+     */
+    private static void loadLocalEnvironmentFallbacks() {
+        localEnvMap.clear();
+
+        // 1. Check local .env file in current working directory
+        File dotEnv = new File(".env");
+        if (!dotEnv.exists() || !dotEnv.canRead()) {
+            // Check parent or catalina base directory
+            String catalinaBase = System.getProperty("catalina.base", System.getenv("CATALINA_BASE"));
+            if (catalinaBase != null && !catalinaBase.trim().isEmpty()) {
+                File tomcatDotEnv = new File(catalinaBase.trim(), ".env");
+                if (tomcatDotEnv.exists() && tomcatDotEnv.canRead()) {
+                    dotEnv = tomcatDotEnv;
                 }
             }
         }
 
-        // 2. Tomcat conf/db.properties
-        if (!loaded) {
+        if (dotEnv.exists() && dotEnv.canRead()) {
+            try (BufferedReader br = new BufferedReader(new FileReader(dotEnv))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    line = line.trim();
+                    if (line.isEmpty() || line.startsWith("#")) continue;
+                    int eqIdx = line.indexOf('=');
+                    if (eqIdx > 0) {
+                        String key = line.substring(0, eqIdx).trim();
+                        String val = line.substring(eqIdx + 1).trim();
+                        if ((val.startsWith("\"") && val.endsWith("\"")) || (val.startsWith("'") && val.endsWith("'"))) {
+                            val = val.substring(1, val.length() - 1);
+                        }
+                        localEnvMap.put(key, val);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("[DBConnection] Note: could not parse .env file: " + e.getMessage());
+            }
+        }
+
+        // 2. If DB_USER still not found, check external uncommitted Tomcat conf/db.properties for local dev
+        if (getEnv("DB_USER") == null) {
             String catalinaBase = System.getProperty("catalina.base", System.getProperty("catalina.home", System.getenv("CATALINA_BASE")));
             if (catalinaBase != null && !catalinaBase.trim().isEmpty()) {
                 File tomcatConf = new File(new File(catalinaBase.trim(), "conf"), "db.properties");
                 if (tomcatConf.exists() && tomcatConf.canRead()) {
+                    Properties p = new Properties();
                     try (InputStream fis = new FileInputStream(tomcatConf)) {
-                        props.load(fis);
-                        configSource = "Tomcat conf (" + tomcatConf.getAbsolutePath() + ")";
-                        loaded = true;
-                    } catch (Exception e) {
-                        System.err.println("[DBConnection] Could not read Tomcat conf/db.properties: " + e.getMessage());
-                    }
+                        p.load(fis);
+                        if (p.getProperty("db.host") != null) localEnvMap.putIfAbsent("DB_HOST", p.getProperty("db.host"));
+                        if (p.getProperty("db.port") != null) localEnvMap.putIfAbsent("DB_PORT", p.getProperty("db.port"));
+                        if (p.getProperty("db.name") != null) localEnvMap.putIfAbsent("DB_NAME", p.getProperty("db.name"));
+                        if (p.getProperty("db.user") != null) localEnvMap.putIfAbsent("DB_USER", p.getProperty("db.user"));
+                        if (p.getProperty("db.pass") != null) localEnvMap.putIfAbsent("DB_PASS", p.getProperty("db.pass"));
+                    } catch (Exception ignored) {}
                 }
             }
         }
+    }
 
-        // 3. Current working directory ./db.properties
-        if (!loaded) {
-            File currentDirFile = new File("db.properties");
-            if (currentDirFile.exists() && currentDirFile.canRead()) {
-                try (InputStream fis = new FileInputStream(currentDirFile)) {
-                    props.load(fis);
-                    configSource = "current directory (" + currentDirFile.getAbsolutePath() + ")";
-                    loaded = true;
-                } catch (Exception e) {
-                    System.err.println("[DBConnection] Could not read current dir db.properties: " + e.getMessage());
-                }
-            }
-        }
+    public static synchronized void loadConfiguration() {
+        loadLocalEnvironmentFallbacks();
 
-        // 4. Classpath WEB-INF/classes/db.properties
-        if (!loaded) {
-            try (InputStream in = DBConnection.class.getClassLoader().getResourceAsStream("db.properties")) {
-                if (in != null) {
-                    props.load(in);
-                    configSource = "classpath (WEB-INF/classes/db.properties)";
-                    loaded = true;
-                }
-            } catch (Exception e) {
-                System.err.println("[DBConnection] Notice: db.properties not found in classpath.");
-            }
+        configSource = "Environment Variables";
+        String directUrl = getEnv("DATABASE_URL");
+        if (directUrl == null) directUrl = getEnv("MYSQL_URL");
+        if (directUrl == null) directUrl = getEnv("DB_URL");
+
+        String host = getEnv("DB_HOST", "localhost");
+        String port = getEnv("DB_PORT", "3306");
+        String dbName = getEnv("DB_NAME", "expense_tracker");
+        username = getEnv("DB_USER");
+        if (username == null) username = getEnv("DB_USERNAME");
+        if (username == null) username = getEnv("MYSQL_USER");
+
+        password = getEnv("DB_PASS");
+        if (password == null) password = getEnv("DB_PASSWORD");
+        if (password == null) password = getEnv("MYSQL_PASSWORD");
+        if (password == null) password = getEnv("MYSQLPASSWORD");
+
+        if (directUrl != null && !directUrl.trim().isEmpty()) {
+            configSource = "Environment variable (DATABASE_URL)";
+        } else if (System.getenv("DB_HOST") != null) {
+            configSource = "Environment variables (DB_HOST=" + System.getenv("DB_HOST") + ", DB_NAME=" + dbName + ")";
+        } else if (!localEnvMap.isEmpty()) {
+            configSource = "Local environment configuration";
         }
 
         boolean isProd = isProductionEnvironment();
-
-        // 1. Detect environment-based configuration priority
-        if (System.getenv("DATABASE_URL") != null && !System.getenv("DATABASE_URL").trim().isEmpty()) {
-            configSource = "Environment variable (DATABASE_URL)";
-        } else if (System.getenv("MYSQL_URL") != null && !System.getenv("MYSQL_URL").trim().isEmpty()) {
-            configSource = "Environment variable (MYSQL_URL)";
-        } else if (System.getenv("DB_HOST") != null && !System.getenv("DB_HOST").trim().isEmpty()) {
-            String envDbName = System.getenv("DB_NAME") != null ? System.getenv("DB_NAME") : "expense_tracker";
-            configSource = "Environment variables (DB_HOST=" + System.getenv("DB_HOST") + ", DB_NAME=" + envDbName + ")";
-        }
-
-        // Check for direct database URL (e.g. DATABASE_URL, DB_URL, MYSQL_URL)
-        String directUrl = resolveValue(
-                new String[]{"db.url", "jdbc.url", "DB_URL", "DATABASE_URL"},
-                new String[]{"DATABASE_URL", "DB_URL", "MYSQL_URL", "JDBC_DATABASE_URL"},
-                props,
-                new String[]{"db.url", "jdbc.url", "url"},
-                null
-        );
-
-        String host = resolveValue(
-                new String[]{"db.host", "mysql.host", "DB_HOST", "MYSQL_HOST"},
-                new String[]{"DB_HOST", "MYSQL_HOST", "MYSQLHOST", "DATABASE_HOST"},
-                props,
-                new String[]{"db.host", "mysql.host", "host"},
-                "localhost"
-        );
-
-        String port = resolveValue(
-                new String[]{"db.port", "mysql.port", "DB_PORT", "MYSQL_PORT"},
-                new String[]{"DB_PORT", "MYSQL_PORT", "MYSQLPORT"},
-                props,
-                new String[]{"db.port", "mysql.port", "port"},
-                "3306"
-        );
-
-        String dbName = resolveValue(
-                new String[]{"db.name", "db.database", "mysql.database", "DB_NAME"},
-                new String[]{"DB_NAME", "DB_DATABASE", "MYSQL_DATABASE"},
-                props,
-                new String[]{"db.name", "db.database", "database"},
-                "expense_tracker"
-        );
-
-        username = resolveValue(
-                new String[]{"db.user", "db.username", "mysql.user", "DB_USER"},
-                new String[]{"DB_USER", "DB_USERNAME", "MYSQL_USER"},
-                props,
-                new String[]{"db.user", "db.username", "username", "user"},
-                "root"
-        );
-
-        password = resolvePassword(props);
-
         boolean isRemoteHost = host != null && !host.equalsIgnoreCase("localhost") && !host.equals("127.0.0.1") && !host.equalsIgnoreCase("db");
-        String explicitSsl = System.getenv("DB_SSL");
+        String explicitSsl = getEnv("DB_SSL");
         String sslParam;
         if (explicitSsl != null && !explicitSsl.trim().isEmpty()) {
             sslParam = "true".equalsIgnoreCase(explicitSsl) ? "useSSL=true&requireSSL=false" : "useSSL=false";
@@ -212,53 +217,15 @@ public class DBConnection {
                 url = directUrl.startsWith("jdbc:") ? directUrl : "jdbc:" + directUrl;
             }
         } else {
-            url = "jdbc:mysql://" + (host != null ? host : "localhost") + ":" + port + "/" + dbName
+            url = "jdbc:mysql://" + host + ":" + port + "/" + dbName
                     + "?" + sslParam + "&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8";
         }
 
         lastLoadTime = System.currentTimeMillis();
-        System.out.println("[DBConnection] Loaded DB Config from: " + configSource + " -> URL: " + sanitizeUrl(url) + ", User: " + username);
+        System.out.println("[DBConnection] Loaded DB Config from: " + configSource + " -> URL: " + sanitizeUrl(url) + ", User: " + (username != null ? username : "(not set)"));
 
         // Test connection and auto-initialize tables if connected
         testAndInitializeDatabase();
-    }
-
-    private static String resolveValue(String[] sysKeys, String[] envKeys, Properties props, String[] propKeys, String defaultVal) {
-        for (String k : sysKeys) {
-            String val = System.getProperty(k);
-            if (val != null && !val.trim().isEmpty()) return val.trim();
-        }
-        for (String k : envKeys) {
-            String val = System.getenv(k);
-            if (val != null && !val.trim().isEmpty()) return val.trim();
-        }
-        for (String k : propKeys) {
-            String val = props.getProperty(k);
-            if (val != null && !val.trim().isEmpty()) return val.trim();
-        }
-        return defaultVal;
-    }
-
-    private static String resolvePassword(Properties props) {
-        String[] sysKeys = {"db.pass", "db.password", "mysql.password", "DB_PASS", "DB_PASSWORD"};
-        for (String k : sysKeys) {
-            String val = System.getProperty(k);
-            if (val != null) return val;
-        }
-
-        String[] envKeys = {"DB_PASS", "DB_PASSWORD", "MYSQL_PASSWORD", "MYSQLPASSWORD", "DATABASE_PASSWORD"};
-        for (String k : envKeys) {
-            String val = System.getenv(k);
-            if (val != null) return val;
-        }
-
-        String[] propKeys = {"db.pass", "db.password", "password", "pass"};
-        for (String k : propKeys) {
-            if (props.containsKey(k)) {
-                return props.getProperty(k);
-            }
-        }
-        return "";
     }
 
     private static String sanitizeUrl(String rawUrl) {
@@ -272,9 +239,15 @@ public class DBConnection {
             return;
         }
 
+        if (username == null || username.trim().isEmpty()) {
+            isDbAvailable = false;
+            System.out.println("[DBConnection] Notice: DB_USER environment variable not set. Falling back to offline demo store.");
+            return;
+        }
+
         try (Connection conn = DriverManager.getConnection(url, username, password != null ? password : "")) {
             isDbAvailable = true;
-            System.out.println("[DBConnection] SUCCESS: Connected to MySQL database (" + url + ")");
+            System.out.println("[DBConnection] SUCCESS: Connected to MySQL database (" + sanitizeUrl(url) + ")");
 
             if (!schemaInitialized) {
                 initSchema(conn);
@@ -367,6 +340,9 @@ public class DBConnection {
     public static Connection getConnection() throws SQLException {
         if (System.currentTimeMillis() - lastLoadTime > RELOAD_INTERVAL_MS) {
             loadConfiguration();
+        }
+        if (username == null || username.trim().isEmpty()) {
+            throw new SQLException("DB_USER environment variable is not defined.");
         }
         return DriverManager.getConnection(url, username, password != null ? password : "");
     }

@@ -21,21 +21,36 @@ err.tmp
 Thumbs.db
 .DS_Store
 
-# Local sensitive overrides (never push your local passwords!)
-tomcat_db.properties
-!src/db.properties
-local.properties
-# Database credentials and environment files
+# Environment and Secret Files (NEVER commit secrets!)
 .env
 .env.*
+*.env
+*.env.local
 !.env.example
+*.secret
+*.credentials
+credentials.json
+secrets/
+
+# Local sensitive configuration files
+local.properties
+secret.properties
+tomcat_db.properties
 db.properties
 !src/db.properties
+setenv.bat
+setenv.sh
+
+# Certificates, Keys, and Private Tokens
 *.pem
 *.key
-
-# Generated build files
-build/
-dist/
-*.war
-*.class
+*.pkcs12
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
