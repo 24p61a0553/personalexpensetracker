@@ -117,6 +117,18 @@
       <!-- Page Content: Starts immediately with Financial Summary KPI Cards -->
       <main class="page-content">
 
+        <!-- Demo Mode Notice (Auto-displayed in Demo Mode) -->
+        <div class="demo-mode-banner" id="demoModeBanner" style="display: none;">
+          <div class="demo-banner-content">
+            <i class="fas fa-flask demo-banner-icon"></i>
+            <div>
+              <span class="demo-banner-title"><span class="badge-demo">Demo Mode</span> Live Demonstration</span>
+              <span>This is a demonstration using sample data. Changes are temporary and may reset when the application restarts.</span>
+            </div>
+          </div>
+          <button type="button" class="demo-banner-close" id="closeDemoBannerBtn" aria-label="Dismiss">&times;</button>
+        </div>
+
         <!-- 1. KPI Cards Grid (Aligned cleanly at the top of content) -->
         <div class="kpi-grid">
           <!-- Total Income -->

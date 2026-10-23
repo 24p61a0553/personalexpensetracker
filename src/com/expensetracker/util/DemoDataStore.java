@@ -66,45 +66,50 @@ public class DemoDataStore {
     }
 
     private static void seedTransactions() {
+        LocalDate now = LocalDate.now();
+        String m0 = now.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+        String m1 = now.minusMonths(1).format(DateTimeFormatter.ofPattern("yyyy-MM"));
+        String m2 = now.minusMonths(2).format(DateTimeFormatter.ofPattern("yyyy-MM"));
+
         // Current month
-        addTx(1, "Monthly Primary Salary", new BigDecimal("4850.00"), "INCOME", "Salary", "2026-10-01", "Bank Transfer", "Direct corporate payroll deposit");
-        addTx(2, "Freelance Web App Development", new BigDecimal("950.00"), "INCOME", "Freelance", "2026-10-08", "PayPal", "Client website UI redesign contract");
-        addTx(3, "Quarterly Stock Dividends", new BigDecimal("145.50"), "INCOME", "Investments", "2026-10-12", "Direct Deposit", "Index fund dividend payout");
-        addTx(4, "Mobile App Consulting Session", new BigDecimal("300.00"), "INCOME", "Business", "2026-10-18", "Bank Transfer", "Tech architecture advisory session");
-        addTx(5, "Credit Card Cashback Reward", new BigDecimal("42.80"), "INCOME", "Other Income", "2026-10-21", "Credit Card", "Monthly cash reward rebate");
+        addTx(1, "Monthly Primary Salary", new BigDecimal("4850.00"), "INCOME", "Salary", m0 + "-01", "Bank Transfer", "Direct corporate payroll deposit");
+        addTx(2, "Freelance Web App Development", new BigDecimal("950.00"), "INCOME", "Freelance", m0 + "-08", "PayPal", "Client website UI redesign contract");
+        addTx(3, "Quarterly Stock Dividends", new BigDecimal("145.50"), "INCOME", "Investments", m0 + "-12", "Direct Deposit", "Index fund dividend payout");
+        addTx(4, "Mobile App Consulting Session", new BigDecimal("300.00"), "INCOME", "Business", m0 + "-18", "Bank Transfer", "Tech architecture advisory session");
+        addTx(5, "Credit Card Cashback Reward", new BigDecimal("42.80"), "INCOME", "Other Income", m0 + "-21", "Credit Card", "Monthly cash reward rebate");
 
         // Previous months income
-        addTx(6, "Monthly Primary Salary (Sept)", new BigDecimal("4850.00"), "INCOME", "Salary", "2026-09-01", "Bank Transfer", "Payroll deposit September");
-        addTx(7, "Freelance Dashboard API Project", new BigDecimal("800.00"), "INCOME", "Freelance", "2026-09-15", "PayPal", "REST API microservice integration");
-        addTx(8, "Monthly Primary Salary (Aug)", new BigDecimal("4850.00"), "INCOME", "Salary", "2026-08-01", "Bank Transfer", "Payroll deposit August");
-        addTx(9, "Stock Portfolio Dividend", new BigDecimal("120.00"), "INCOME", "Investments", "2026-08-14", "Direct Deposit", "August dividend distribution");
+        addTx(6, "Monthly Primary Salary (Prior M1)", new BigDecimal("4850.00"), "INCOME", "Salary", m1 + "-01", "Bank Transfer", "Payroll deposit last month");
+        addTx(7, "Freelance Dashboard API Project", new BigDecimal("800.00"), "INCOME", "Freelance", m1 + "-15", "PayPal", "REST API microservice integration");
+        addTx(8, "Monthly Primary Salary (Prior M2)", new BigDecimal("4850.00"), "INCOME", "Salary", m2 + "-01", "Bank Transfer", "Payroll deposit two months ago");
+        addTx(9, "Stock Portfolio Dividend", new BigDecimal("120.00"), "INCOME", "Investments", m2 + "-14", "Direct Deposit", "August dividend distribution");
 
         // Current month expenses
-        addTx(10, "Monthly Apartment Rent", new BigDecimal("1250.00"), "EXPENSE", "Rent & Housing", "2026-10-02", "Bank Transfer", "October residential lease payment");
-        addTx(11, "Whole Foods Grocery Mart", new BigDecimal("194.30"), "EXPENSE", "Food & Dining", "2026-10-04", "Debit Card", "Weekly household groceries");
-        addTx(12, "High-Speed Fiber Internet", new BigDecimal("65.00"), "EXPENSE", "Utilities", "2026-10-06", "Credit Card", "1 Gbps broadband subscription");
-        addTx(13, "Gas Station Fuel Refill", new BigDecimal("54.00"), "EXPENSE", "Transportation", "2026-10-07", "Credit Card", "Vehicle unleaded fuel refill");
-        addTx(14, "Dining at Italian Bistro", new BigDecimal("78.50"), "EXPENSE", "Food & Dining", "2026-10-10", "Credit Card", "Dinner with college friends");
-        addTx(15, "Electric & Municipal Water Utility", new BigDecimal("118.25"), "EXPENSE", "Utilities", "2026-10-11", "Debit Card", "City electricity and water bill");
-        addTx(16, "Gym Membership Monthly Fee", new BigDecimal("45.00"), "EXPENSE", "Healthcare", "2026-10-13", "Credit Card", "Fitness center monthly membership");
-        addTx(17, "Pharmacy & Health Vitamins", new BigDecimal("32.60"), "EXPENSE", "Healthcare", "2026-10-15", "Debit Card", "Daily multivitamin supplements");
-        addTx(18, "Streaming Video & Music Services", new BigDecimal("28.98"), "EXPENSE", "Entertainment", "2026-10-16", "Credit Card", "Netflix & Spotify subscriptions");
-        addTx(19, "Weekend Farmers Market", new BigDecimal("62.40"), "EXPENSE", "Food & Dining", "2026-10-18", "Cash", "Fresh produce, eggs, fruits");
-        addTx(20, "Online Cloud Certification Course", new BigDecimal("49.99"), "EXPENSE", "Education", "2026-10-19", "Credit Card", "AWS Solutions Architect prep course");
-        addTx(21, "Autumn Clothing & Apparel", new BigDecimal("129.50"), "EXPENSE", "Shopping", "2026-10-20", "Credit Card", "Warm winter jackets and apparel");
-        addTx(22, "Subway & Public Transit Pass", new BigDecimal("35.00"), "EXPENSE", "Transportation", "2026-10-22", "Debit Card", "Monthly commuter transit card");
+        addTx(10, "Monthly Apartment Rent", new BigDecimal("1250.00"), "EXPENSE", "Rent & Housing", m0 + "-02", "Bank Transfer", "Residential lease payment");
+        addTx(11, "Whole Foods Grocery Mart", new BigDecimal("194.30"), "EXPENSE", "Food & Dining", m0 + "-04", "Debit Card", "Weekly household groceries");
+        addTx(12, "High-Speed Fiber Internet", new BigDecimal("65.00"), "EXPENSE", "Utilities", m0 + "-06", "Credit Card", "1 Gbps broadband subscription");
+        addTx(13, "Gas Station Fuel Refill", new BigDecimal("54.00"), "EXPENSE", "Transportation", m0 + "-07", "Credit Card", "Vehicle unleaded fuel refill");
+        addTx(14, "Dining at Italian Bistro", new BigDecimal("78.50"), "EXPENSE", "Food & Dining", m0 + "-10", "Credit Card", "Dinner with college friends");
+        addTx(15, "Electric & Municipal Water Utility", new BigDecimal("118.25"), "EXPENSE", "Utilities", m0 + "-11", "Debit Card", "City electricity and water bill");
+        addTx(16, "Gym Membership Monthly Fee", new BigDecimal("45.00"), "EXPENSE", "Healthcare", m0 + "-13", "Credit Card", "Fitness center monthly membership");
+        addTx(17, "Pharmacy & Health Vitamins", new BigDecimal("32.60"), "EXPENSE", "Healthcare", m0 + "-15", "Debit Card", "Daily multivitamin supplements");
+        addTx(18, "Streaming Video & Music Services", new BigDecimal("28.98"), "EXPENSE", "Entertainment", m0 + "-16", "Credit Card", "Netflix & Spotify subscriptions");
+        addTx(19, "Weekend Farmers Market", new BigDecimal("62.40"), "EXPENSE", "Food & Dining", m0 + "-18", "Cash", "Fresh produce, eggs, fruits");
+        addTx(20, "Online Cloud Certification Course", new BigDecimal("49.99"), "EXPENSE", "Education", m0 + "-19", "Credit Card", "AWS Solutions Architect prep course");
+        addTx(21, "Autumn Clothing & Apparel", new BigDecimal("129.50"), "EXPENSE", "Shopping", m0 + "-20", "Credit Card", "Warm winter jackets and apparel");
+        addTx(22, "Subway & Public Transit Pass", new BigDecimal("35.00"), "EXPENSE", "Transportation", m0 + "-22", "Debit Card", "Monthly commuter transit card");
 
         // Previous months expenses
-        addTx(23, "Monthly Apartment Rent (Sept)", new BigDecimal("1250.00"), "EXPENSE", "Rent & Housing", "2026-09-02", "Bank Transfer", "September residential lease");
-        addTx(24, "Supermarket Groceries (Sept)", new BigDecimal("380.00"), "EXPENSE", "Food & Dining", "2026-09-12", "Debit Card", "September total groceries");
-        addTx(25, "Utilities Electricity & Gas (Sept)", new BigDecimal("135.00"), "EXPENSE", "Utilities", "2026-09-14", "Debit Card", "September utility bills");
-        addTx(26, "Transit & Transportation (Sept)", new BigDecimal("110.00"), "EXPENSE", "Transportation", "2026-09-20", "Credit Card", "Fuel & Metro transit");
-        addTx(27, "Books & Technical Manuals", new BigDecimal("75.00"), "EXPENSE", "Education", "2026-09-22", "Credit Card", "Software architecture textbooks");
+        addTx(23, "Monthly Apartment Rent (Prior M1)", new BigDecimal("1250.00"), "EXPENSE", "Rent & Housing", m1 + "-02", "Bank Transfer", "Residential lease");
+        addTx(24, "Supermarket Groceries (Prior M1)", new BigDecimal("380.00"), "EXPENSE", "Food & Dining", m1 + "-12", "Debit Card", "Monthly total groceries");
+        addTx(25, "Utilities Electricity & Gas (Prior M1)", new BigDecimal("135.00"), "EXPENSE", "Utilities", m1 + "-14", "Debit Card", "Monthly utility bills");
+        addTx(26, "Transit & Transportation (Prior M1)", new BigDecimal("110.00"), "EXPENSE", "Transportation", m1 + "-20", "Credit Card", "Fuel & Metro transit");
+        addTx(27, "Books & Technical Manuals", new BigDecimal("75.00"), "EXPENSE", "Education", m1 + "-22", "Credit Card", "Software architecture textbooks");
 
-        addTx(28, "Monthly Apartment Rent (Aug)", new BigDecimal("1250.00"), "EXPENSE", "Rent & Housing", "2026-08-02", "Bank Transfer", "August residential lease");
-        addTx(29, "Supermarket Groceries (Aug)", new BigDecimal("395.00"), "EXPENSE", "Food & Dining", "2026-08-11", "Debit Card", "August total groceries");
-        addTx(30, "Utilities Electricity & Gas (Aug)", new BigDecimal("142.00"), "EXPENSE", "Utilities", "2026-08-15", "Debit Card", "August electricity bill");
-        addTx(31, "Concert & Summer Entertainment", new BigDecimal("120.00"), "EXPENSE", "Entertainment", "2026-08-25", "Credit Card", "Summer music concert ticket");
+        addTx(28, "Monthly Apartment Rent (Prior M2)", new BigDecimal("1250.00"), "EXPENSE", "Rent & Housing", m2 + "-02", "Bank Transfer", "Residential lease");
+        addTx(29, "Supermarket Groceries (Prior M2)", new BigDecimal("395.00"), "EXPENSE", "Food & Dining", m2 + "-11", "Debit Card", "Monthly total groceries");
+        addTx(30, "Utilities Electricity & Gas (Prior M2)", new BigDecimal("142.00"), "EXPENSE", "Utilities", m2 + "-15", "Debit Card", "Monthly electricity bill");
+        addTx(31, "Concert & Summer Entertainment", new BigDecimal("120.00"), "EXPENSE", "Entertainment", m2 + "-25", "Credit Card", "Live music concert ticket");
     }
 
     private static void addTx(int id, String title, BigDecimal amount, String type, String category,
@@ -224,6 +229,9 @@ public class DemoDataStore {
         ds.setPersonName(personName);
         ds.setCategoryBreakdown(catBreakdown);
         ds.setRecentTransactions(recent);
+        ds.setDatabaseConnected(false);
+        ds.setAppMode("demo");
+        ds.setDatabaseSource("Demo Mode (In-Memory)");
         return ds;
     }
 

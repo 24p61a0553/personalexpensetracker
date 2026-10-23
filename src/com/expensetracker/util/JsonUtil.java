@@ -66,7 +66,15 @@ public class JsonUtil {
     public static void sendError(HttpServletResponse response, int statusCode, String message) throws IOException {
         JsonObject obj = new JsonObject();
         obj.addProperty("success", false);
-        obj.addProperty("message", message);
+        obj.addProperty("message", sanitizeErrorMessage(message));
         sendJsonResponse(response, statusCode, obj);
+    }
+
+    private static String sanitizeErrorMessage(String raw) {
+        if (raw == null) return "An unexpected error occurred.";
+        return raw.replaceAll("(?i)(password=)[^&;\\s]*", "$1*****")
+                  .replaceAll("(?i)(user=)[^&;\\s]*", "$1*****")
+                  .replaceAll("(?i)(DB_PASS)[=:][^&;\\s]*", "$1=*****")
+                  .replaceAll("(?i)(DB_USER)[=:][^&;\\s]*", "$1=*****");
     }
 }

@@ -40,6 +40,9 @@ FROM tomcat:9.0-jdk17-temurin
 # Clean default Tomcat webapps
 RUN rm -rf /usr/local/tomcat/webapps/*
 
+# Set default application mode to demo (can be overridden to 'database' at runtime)
+ENV APP_MODE=demo
+
 # Disable Tomcat shutdown port (prevents cloud health-checks from hitting the shutdown socket)
 RUN sed -i 's/<Server port="8005"/<Server port="-1"/' /usr/local/tomcat/conf/server.xml
 

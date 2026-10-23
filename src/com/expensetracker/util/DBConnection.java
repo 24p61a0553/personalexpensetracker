@@ -39,11 +39,30 @@ public class DBConnection {
     private static long lastLoadTime = 0;
     private static final long RELOAD_INTERVAL_MS = 10000;
     private static boolean isDbAvailable = false;
+    private static String lastError = null;
     private static final Map<String, String> localEnvMap = new HashMap<>();
 
     static {
         loadDriver();
         loadConfiguration();
+    }
+
+    public static String getEnvValue(String name) {
+        return getEnv(name);
+    }
+
+    public static String getLastError() {
+        return lastError;
+    }
+
+    public static boolean hasDatabaseCredentials() {
+        loadLocalEnvironmentFallbacks();
+        String u = getEnv("DB_USER");
+        if (u == null) u = getEnv("DB_USERNAME");
+        if (u == null) u = getEnv("MYSQL_USER");
+        String directUrl = getEnv("DATABASE_URL");
+        if (directUrl == null) directUrl = getEnv("MYSQL_URL");
+        return (u != null && !u.trim().isEmpty()) || (directUrl != null && !directUrl.trim().isEmpty());
     }
 
     public static boolean isProductionEnvironment() {
@@ -152,6 +171,14 @@ public class DBConnection {
     }
 
     public static synchronized void loadConfiguration() {
+        if (AppConfig.isDemoMode()) {
+            isDbAvailable = false;
+            configSource = "Demo Mode (In-Memory)";
+            lastLoadTime = System.currentTimeMillis();
+            System.out.println("[DBConnection] DEMO mode active (APP_MODE=demo). Skipping MySQL initialization.");
+            return;
+        }
+
         loadLocalEnvironmentFallbacks();
 
         configSource = "Environment Variables";
@@ -236,17 +263,20 @@ public class DBConnection {
     private static void testAndInitializeDatabase() {
         if (!driverLoaded) {
             isDbAvailable = false;
+            lastError = "MySQL JDBC driver not loaded.";
             return;
         }
 
         if (username == null || username.trim().isEmpty()) {
             isDbAvailable = false;
-            System.out.println("[DBConnection] Notice: DB_USER environment variable not set. Falling back to offline demo store.");
+            lastError = "DB_USER environment variable is not defined.";
+            System.err.println("[DBConnection] ERROR: DB_USER environment variable not defined in DATABASE mode.");
             return;
         }
 
         try (Connection conn = DriverManager.getConnection(url, username, password != null ? password : "")) {
             isDbAvailable = true;
+            lastError = null;
             System.out.println("[DBConnection] SUCCESS: Connected to MySQL database (" + sanitizeUrl(url) + ")");
 
             if (!schemaInitialized) {
@@ -255,8 +285,8 @@ public class DBConnection {
             }
         } catch (SQLException e) {
             isDbAvailable = false;
-            System.out.println("[DBConnection] Notice: MySQL database currently not reachable: " + e.getMessage());
-            System.out.println("[DBConnection] Active mode: Fallback memory data store enabled for continuous testing.");
+            lastError = e.getMessage();
+            System.err.println("[DBConnection] ERROR: MySQL database connection failed in DATABASE mode: " + e.getMessage());
         }
     }
 
@@ -338,16 +368,25 @@ public class DBConnection {
     }
 
     public static Connection getConnection() throws SQLException {
+        if (AppConfig.isDemoMode()) {
+            throw new SQLException("Cannot open JDBC connection: Application is currently running in DEMO mode (APP_MODE=demo).");
+        }
         if (System.currentTimeMillis() - lastLoadTime > RELOAD_INTERVAL_MS) {
             loadConfiguration();
         }
+        if (!isDbAvailable) {
+            throw new SQLException("Database connection failed in DATABASE mode: " + (lastError != null ? lastError : "MySQL service unreachable."));
+        }
         if (username == null || username.trim().isEmpty()) {
-            throw new SQLException("DB_USER environment variable is not defined.");
+            throw new SQLException("DB_USER environment variable is not defined in DATABASE mode.");
         }
         return DriverManager.getConnection(url, username, password != null ? password : "");
     }
 
     public static boolean isAvailable() {
+        if (AppConfig.isDemoMode()) {
+            return false;
+        }
         return isDbAvailable;
     }
 

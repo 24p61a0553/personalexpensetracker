@@ -88,7 +88,7 @@ async function loadDashboardData() {
     }
 
     // Update Database Status Badge
-    updateDatabaseStatus(d.databaseConnected, d.databaseSource);
+    updateDatabaseStatus(d.databaseConnected, d.databaseSource, d.appMode);
 
     // Render Charts
     renderCategoryChart(d.categoryBreakdown || []);
@@ -103,19 +103,39 @@ async function loadDashboardData() {
   }
 }
 
-function updateDatabaseStatus(connected, source) {
+function updateDatabaseStatus(connected, source, appMode) {
   const dot = document.getElementById('dbStatusDot');
   const text = document.getElementById('dbStatusText');
-  if (!dot || !text) return;
+  const banner = document.getElementById('demoModeBanner');
 
-  if (connected) {
-    dot.className = 'status-dot connected';
-    text.textContent = 'MySQL Connected';
-    text.title = source || 'Connected to expense_tracker MySQL database';
-  } else {
-    dot.className = 'status-dot offline';
-    text.textContent = 'Demo Mode (Offline)';
-    text.title = 'MySQL not detected. Using memory fallback. Run setup_db.bat to link MySQL.';
+  const isDemo = appMode === 'demo' || !connected;
+
+  if (dot && text) {
+    if (!isDemo) {
+      dot.className = 'status-dot connected';
+      text.textContent = 'MySQL Connected';
+      text.title = source || 'Connected to expense_tracker MySQL database';
+    } else {
+      dot.className = 'status-dot offline';
+      text.textContent = 'Demo Mode (In-Memory)';
+      text.title = 'Running in public demo mode with synthetic data. Changes are temporary and reset when the application restarts.';
+    }
+  }
+
+  if (banner) {
+    if (isDemo && sessionStorage.getItem('dismissDemoBanner') !== 'true') {
+      banner.style.display = 'flex';
+      const closeBtn = document.getElementById('closeDemoBannerBtn');
+      if (closeBtn && !closeBtn._hasListener) {
+        closeBtn._hasListener = true;
+        closeBtn.addEventListener('click', () => {
+          banner.style.display = 'none';
+          sessionStorage.setItem('dismissDemoBanner', 'true');
+        });
+      }
+    } else {
+      banner.style.display = 'none';
+    }
   }
 }
 

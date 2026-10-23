@@ -1,6 +1,7 @@
 package com.expensetracker.dao;
 
 import com.expensetracker.model.Category;
+import com.expensetracker.util.AppConfig;
 import com.expensetracker.util.DBConnection;
 import com.expensetracker.util.DemoDataStore;
 
@@ -13,6 +14,7 @@ import java.util.List;
 
 /**
  * Data Access Object for Categories.
+ * Automatically respects AppConfig (DEMO vs DATABASE mode).
  */
 public class CategoryDAO {
 
@@ -21,7 +23,7 @@ public class CategoryDAO {
     }
 
     public List<Category> getByType(String type) {
-        if (!DBConnection.isAvailable()) {
+        if (AppConfig.isDemoMode()) {
             return DemoDataStore.getCategories(type);
         }
 
@@ -59,8 +61,8 @@ public class CategoryDAO {
             }
             return list;
         } catch (SQLException e) {
-            System.err.println("[CategoryDAO] Error reading categories from database: " + e.getMessage());
-            return DemoDataStore.getCategories(type);
+            System.err.println("[CategoryDAO] Error reading categories in DATABASE mode: " + e.getMessage());
+            throw new RuntimeException("Database error in DATABASE mode: " + e.getMessage(), e);
         }
     }
 }

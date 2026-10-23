@@ -154,6 +154,51 @@ const API = {
         }
       });
     }
+
+    // Auto-sync status on page load
+    this.syncDatabaseStatus();
+  },
+
+  // Synchronize database and demo mode status in sidebar and page banners
+  async syncDatabaseStatus() {
+    try {
+      const res = await this.get('/api/dashboard');
+      if (res && res.data) {
+        const d = res.data;
+        const isDemo = d.appMode === 'demo' || !d.databaseConnected;
+        const dot = document.getElementById('dbStatusDot');
+        const text = document.getElementById('dbStatusText');
+        if (dot && text) {
+          if (!isDemo) {
+            dot.className = 'status-dot connected';
+            text.textContent = 'MySQL Connected';
+            text.title = d.databaseSource || 'Connected to MySQL database';
+          } else {
+            dot.className = 'status-dot offline';
+            text.textContent = 'Demo Mode (In-Memory)';
+            text.title = 'Running in public demo mode with synthetic data. Changes are temporary and reset when the server restarts.';
+          }
+        }
+        const banner = document.getElementById('demoModeBanner');
+        if (banner) {
+          if (isDemo && sessionStorage.getItem('dismissDemoBanner') !== 'true') {
+            banner.style.display = 'flex';
+            const closeBtn = document.getElementById('closeDemoBannerBtn');
+            if (closeBtn && !closeBtn._hasListener) {
+              closeBtn._hasListener = true;
+              closeBtn.addEventListener('click', () => {
+                banner.style.display = 'none';
+                sessionStorage.setItem('dismissDemoBanner', 'true');
+              });
+            }
+          } else {
+            banner.style.display = 'none';
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Could not sync database status:', e);
+    }
   },
 
   // Date Formatter: "Oct 24, 2026"

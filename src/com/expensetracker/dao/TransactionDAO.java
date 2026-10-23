@@ -1,6 +1,7 @@
 package com.expensetracker.dao;
 
 import com.expensetracker.model.*;
+import com.expensetracker.util.AppConfig;
 import com.expensetracker.util.DBConnection;
 import com.expensetracker.util.DemoDataStore;
 
@@ -13,14 +14,15 @@ import java.util.*;
 
 /**
  * Data Access Object for Transactions.
- * Implements CRUD operations, filtering, and aggregated financial summaries using PreparedStatement.
+ * Implements CRUD operations, filtering, and aggregated financial summaries.
+ * Automatically respects AppConfig (DEMO vs DATABASE mode).
  */
 public class TransactionDAO {
 
     private final ProfileDAO profileDAO = new ProfileDAO();
 
     public List<Transaction> getAll(String type, String category, String startDate, String endDate, String search) {
-        if (!DBConnection.isAvailable()) {
+        if (AppConfig.isDemoMode()) {
             return DemoDataStore.getAll(type, category, startDate, endDate, search);
         }
 
@@ -74,13 +76,13 @@ public class TransactionDAO {
             }
             return list;
         } catch (SQLException e) {
-            System.err.println("[TransactionDAO] getAll error: " + e.getMessage());
-            return DemoDataStore.getAll(type, category, startDate, endDate, search);
+            System.err.println("[TransactionDAO] getAll error in DATABASE mode: " + e.getMessage());
+            throw new RuntimeException("Database error in DATABASE mode: " + e.getMessage(), e);
         }
     }
 
     public Transaction getById(int id) {
-        if (!DBConnection.isAvailable()) {
+        if (AppConfig.isDemoMode()) {
             return DemoDataStore.getById(id);
         }
 
@@ -96,13 +98,13 @@ public class TransactionDAO {
             }
             return null;
         } catch (SQLException e) {
-            System.err.println("[TransactionDAO] getById error: " + e.getMessage());
-            return DemoDataStore.getById(id);
+            System.err.println("[TransactionDAO] getById error in DATABASE mode: " + e.getMessage());
+            throw new RuntimeException("Database error in DATABASE mode: " + e.getMessage(), e);
         }
     }
 
     public Transaction insert(Transaction t) {
-        if (!DBConnection.isAvailable()) {
+        if (AppConfig.isDemoMode()) {
             return DemoDataStore.insert(t);
         }
 
@@ -136,13 +138,13 @@ public class TransactionDAO {
             }
             return t;
         } catch (SQLException e) {
-            System.err.println("[TransactionDAO] insert error: " + e.getMessage());
-            return DemoDataStore.insert(t);
+            System.err.println("[TransactionDAO] insert error in DATABASE mode: " + e.getMessage());
+            throw new RuntimeException("Database error in DATABASE mode: " + e.getMessage(), e);
         }
     }
 
     public boolean update(Transaction t) {
-        if (!DBConnection.isAvailable()) {
+        if (AppConfig.isDemoMode()) {
             return DemoDataStore.update(t);
         }
 
@@ -162,13 +164,13 @@ public class TransactionDAO {
             int affected = ps.executeUpdate();
             return affected > 0;
         } catch (SQLException e) {
-            System.err.println("[TransactionDAO] update error: " + e.getMessage());
-            return DemoDataStore.update(t);
+            System.err.println("[TransactionDAO] update error in DATABASE mode: " + e.getMessage());
+            throw new RuntimeException("Database error in DATABASE mode: " + e.getMessage(), e);
         }
     }
 
     public boolean delete(int id) {
-        if (!DBConnection.isAvailable()) {
+        if (AppConfig.isDemoMode()) {
             return DemoDataStore.delete(id);
         }
 
@@ -180,21 +182,19 @@ public class TransactionDAO {
             int affected = ps.executeUpdate();
             return affected > 0;
         } catch (SQLException e) {
-            System.err.println("[TransactionDAO] delete error: " + e.getMessage());
-            return DemoDataStore.delete(id);
+            System.err.println("[TransactionDAO] delete error in DATABASE mode: " + e.getMessage());
+            throw new RuntimeException("Database error in DATABASE mode: " + e.getMessage(), e);
         }
     }
 
     public DashboardSummary getDashboardSummary() {
-        if (!DBConnection.isAvailable()) {
-            DashboardSummary ds = DemoDataStore.getDashboardSummary();
-            ds.setDatabaseConnected(false);
-            ds.setDatabaseSource("Offline Mode (Demo in-memory store)");
-            return ds;
+        if (AppConfig.isDemoMode()) {
+            return DemoDataStore.getDashboardSummary();
         }
 
         DashboardSummary ds = new DashboardSummary();
         ds.setDatabaseConnected(true);
+        ds.setAppMode("database");
         ds.setDatabaseSource("MySQL Database (" + DBConnection.getConfigSource() + ")");
         ds.setPersonName(profileDAO.getPersonName());
 
@@ -284,17 +284,13 @@ public class TransactionDAO {
 
             return ds;
         } catch (SQLException e) {
-            System.err.println("[TransactionDAO] getDashboardSummary SQL error: " + e.getMessage());
-            DashboardSummary dsFallback = DemoDataStore.getDashboardSummary();
-            dsFallback.setDatabaseConnected(false);
-            dsFallback.setDatabaseSource("Offline Mode: " + e.getMessage());
-            dsFallback.setPersonName(profileDAO.getPersonName());
-            return dsFallback;
+            System.err.println("[TransactionDAO] getDashboardSummary SQL error in DATABASE mode: " + e.getMessage());
+            throw new RuntimeException("Database query failed in DATABASE mode: " + e.getMessage(), e);
         }
     }
 
     public ReportData getReportData() {
-        if (!DBConnection.isAvailable()) {
+        if (AppConfig.isDemoMode()) {
             return DemoDataStore.getReportData();
         }
 
@@ -412,8 +408,8 @@ public class TransactionDAO {
 
             return rd;
         } catch (SQLException e) {
-            System.err.println("[TransactionDAO] getReportData SQL error: " + e.getMessage());
-            return DemoDataStore.getReportData();
+            System.err.println("[TransactionDAO] getReportData SQL error in DATABASE mode: " + e.getMessage());
+            throw new RuntimeException("Database error in DATABASE mode: " + e.getMessage(), e);
         }
     }
 

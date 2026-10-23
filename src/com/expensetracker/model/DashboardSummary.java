@@ -21,6 +21,7 @@ public class DashboardSummary {
     private boolean databaseConnected;
     private String databaseSource;
     private String personName = "Srinivas";
+    private String appMode = "demo";
 
     public DashboardSummary() {
         this.totalIncome = BigDecimal.ZERO;
@@ -126,5 +127,13 @@ public class DashboardSummary {
 
     public void setPersonName(String personName) {
         this.personName = personName;
+    }
+
+    public String getAppMode() {
+        return appMode;
+    }
+
+    public void setAppMode(String appMode) {
+        this.appMode = appMode;
     }
 }

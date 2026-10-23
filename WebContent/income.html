@@ -55,6 +55,10 @@
       </nav>
 
       <div class="sidebar-footer">
+        <div class="db-status-pill" style="margin-bottom: 0.5rem;">
+          <span class="status-dot offline" id="dbStatusDot"></span>
+          <span id="dbStatusText">Checking DB...</span>
+        </div>
         <a href="index.html" class="btn btn-secondary btn-sm" style="width: 100%;">
           <i class="fas fa-arrow-left"></i> Back to Dashboard
         </a>
@@ -107,6 +111,18 @@
       </div>
 
       <main class="page-content">
+
+        <!-- Demo Mode Notice (Auto-displayed in Demo Mode) -->
+        <div class="demo-mode-banner" id="demoModeBanner" style="display: none;">
+          <div class="demo-banner-content">
+            <i class="fas fa-flask demo-banner-icon"></i>
+            <div>
+              <span class="demo-banner-title"><span class="badge-demo">Demo Mode</span> Live Demonstration</span>
+              <span>This is a demonstration using sample data. Changes are temporary and may reset when the application restarts.</span>
+            </div>
+          </div>
+          <button type="button" class="demo-banner-close" id="closeDemoBannerBtn" aria-label="Dismiss">&times;</button>
+        </div>
 
         <!-- Income Statistics Banner -->
         <div class="stats-bar">

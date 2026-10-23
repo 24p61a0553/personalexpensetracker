@@ -1,6 +1,7 @@
 package com.expensetracker.dao;
 
 import com.expensetracker.model.UserProfile;
+import com.expensetracker.util.AppConfig;
 import com.expensetracker.util.DBConnection;
 import com.expensetracker.util.DemoDataStore;
 
@@ -13,11 +14,12 @@ import java.sql.SQLException;
  * Data Access Object for Person Profile management.
  * Persists the person's name in MySQL using PreparedStatements and updates
  * associated transactions to link with the active user profile.
+ * Automatically respects AppConfig (DEMO vs DATABASE mode).
  */
 public class ProfileDAO {
 
     public UserProfile getProfile() {
-        if (!DBConnection.isAvailable()) {
+        if (AppConfig.isDemoMode()) {
             return DemoDataStore.getProfile();
         }
 
@@ -38,8 +40,8 @@ public class ProfileDAO {
             // If table has no record yet, return default profile
             return new UserProfile(1, "Srinivas");
         } catch (SQLException e) {
-            System.err.println("[ProfileDAO] getProfile SQL error: " + e.getMessage());
-            return DemoDataStore.getProfile();
+            System.err.println("[ProfileDAO] getProfile SQL error in DATABASE mode: " + e.getMessage());
+            throw new RuntimeException("Database error in DATABASE mode: " + e.getMessage(), e);
         }
     }
 
@@ -53,7 +55,7 @@ public class ProfileDAO {
             throw new IllegalArgumentException("Person name exceeds maximum allowed length of 100 characters");
         }
 
-        if (!DBConnection.isAvailable()) {
+        if (AppConfig.isDemoMode()) {
             return DemoDataStore.saveProfile(cleanedName);
         }
 
