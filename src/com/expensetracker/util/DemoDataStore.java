@@ -20,6 +20,22 @@ public class DemoDataStore {
     private static final Map<Integer, Transaction> transactions = new ConcurrentHashMap<>();
     private static final Map<String, Category> categories = new ConcurrentHashMap<>();
     private static final AtomicInteger idCounter = new AtomicInteger(100);
+    private static volatile String personName = "Srinivas";
+
+    public static UserProfile getProfile() {
+        return new UserProfile(1, personName);
+    }
+
+    public static boolean saveProfile(String name) {
+        if (name != null && !name.trim().isEmpty()) {
+            personName = name.trim();
+            for (Transaction t : transactions.values()) {
+                t.setPersonName(personName);
+            }
+            return true;
+        }
+        return false;
+    }
 
     static {
         seedCategories();
@@ -205,6 +221,7 @@ public class DemoDataStore {
         ds.setThisMonthExpense(curMonthExp);
         ds.setSavingsRate(savingsRate);
         ds.setTotalTransactions(transactions.size());
+        ds.setPersonName(personName);
         ds.setCategoryBreakdown(catBreakdown);
         ds.setRecentTransactions(recent);
         return ds;

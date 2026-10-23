@@ -43,10 +43,13 @@ RUN rm -rf /usr/local/tomcat/webapps/*
 # Disable Tomcat shutdown port (prevents cloud health-checks from hitting the shutdown socket)
 RUN sed -i 's/<Server port="8005"/<Server port="-1"/' /usr/local/tomcat/conf/server.xml
 
+# Enable RemoteIpValve for Render HTTPS reverse proxy and client IP forwarding
+RUN sed -i '/<\/Host>/i \        <Valve className="org.apache.catalina.valves.RemoteIpValve" remoteIpHeader="x-forwarded-for" protocolHeader="x-forwarded-proto" protocolHeaderHttpsValue="https" />' /usr/local/tomcat/conf/server.xml
+
 # Copy WAR as ROOT.war for root domain mapping (http://domain.com/ instead of /PersonalExpenseTracker/)
 COPY --from=builder /app/dist/PersonalExpenseTracker.war /usr/local/tomcat/webapps/ROOT.war
 
 EXPOSE 8080
 
 # Dynamically bind HTTP connector to cloud provider's $PORT (Render default) or fallback to 8080
-CMD ["sh", "-c", "TARGET_PORT=\"${PORT:-8080}\" && echo \"[Startup] Binding Tomcat HTTP connector to port: $TARGET_PORT\" && sed -i \"s/<Connector port=\\\"8080\\\"/<Connector port=\\\"$TARGET_PORT\\\"/g\" /usr/local/tomcat/conf/server.xml && exec catalina.sh run"]
+CMD ["sh", "-c", "TARGET_PORT=\"${PORT:-8080}\" && echo \"[Startup] Binding Tomcat HTTP connector to port: $TARGET_PORT\" && sed -i \"s/<Connector port=\\\"[0-9]*\\\"/<Connector port=\\\"$TARGET_PORT\\\"/g\" /usr/local/tomcat/conf/server.xml && exec catalina.sh run"]

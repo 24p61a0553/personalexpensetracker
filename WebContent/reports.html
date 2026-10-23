@@ -14,6 +14,9 @@
 </head>
 <body>
 
+  <!-- Mobile Backdrop Overlay -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
   <div class="app-layout">
     <!-- Sidebar Navigation -->
     <aside class="sidebar" id="sidebar">
@@ -21,6 +24,17 @@
         <div class="brand-icon"><i class="fas fa-wallet"></i></div>
         <div class="brand-text">Expense<span>Tracker</span></div>
       </a>
+
+      <!-- User Profile Badge in Sidebar -->
+      <div class="sidebar-user-card">
+        <div class="sidebar-user-avatar">
+          <i class="fas fa-user-circle"></i>
+        </div>
+        <div class="sidebar-user-details">
+          <span class="sidebar-user-greeting">Welcome,</span>
+          <span class="sidebar-user-name display-person-name" id="sidebarPersonName">Srinivas</span>
+        </div>
+      </div>
 
       <nav class="sidebar-nav">
         <a href="index.html" class="nav-item">
@@ -55,7 +69,10 @@
           <button class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Toggle navigation">
             <i class="fas fa-bars"></i>
           </button>
-          <h1 class="page-heading">Financial Reports &amp; Analytics</h1>
+          <div class="heading-wrapper">
+            <h1 class="page-heading">Reports &amp; Analytics</h1>
+            <p class="page-subheading">Comprehensive monthly cashflow, category breakdown and savings statements</p>
+          </div>
         </div>
 
         <div class="topbar-right">
@@ -68,13 +85,35 @@
         </div>
       </header>
 
+      <!-- Dedicated Person Profile Header Bar -->
+      <div class="profile-header-bar">
+        <div class="profile-badge">
+          <div class="profile-avatar-icon">
+            <i class="fas fa-user-check"></i>
+          </div>
+          <div class="profile-status">
+            <span class="profile-label">Account Profile</span>
+            <span class="profile-name-prominent display-person-name" id="displayPersonName">Srinivas</span>
+          </div>
+        </div>
+        <div class="profile-edit-group">
+          <div class="input-with-icon">
+            <i class="fas fa-user-pen"></i>
+            <input type="text" id="personNameInput" class="person-input" value="Srinivas" placeholder="Enter your name" maxlength="100" autocomplete="off" aria-label="Person Name">
+          </div>
+          <button type="button" id="savePersonNameBtn" class="btn btn-save-name">
+            <i class="fas fa-save"></i> Save Name
+          </button>
+        </div>
+      </div>
+
       <main class="page-content">
 
         <!-- Summary Metrics Cards -->
         <div class="report-summary-metrics">
           <div class="metric-card">
             <span class="metric-card-label">Avg. Monthly Burn</span>
-            <span class="metric-card-val" id="metricAvgExpense">$0.00</span>
+            <span class="metric-card-val" id="metricAvgExpense">₹0.00</span>
             <span class="metric-card-sub"><i class="fas fa-calculator"></i> Monthly Spending Mean</span>
           </div>
 
@@ -87,13 +126,13 @@
           <div class="metric-card">
             <span class="metric-card-label">Top Expense Category</span>
             <span class="metric-card-val" id="metricTopExpense" style="font-size: 1.25rem;">—</span>
-            <span class="metric-card-sub" id="metricTopExpenseSub" style="color: var(--expense);">$0.00</span>
+            <span class="metric-card-sub" id="metricTopExpenseSub" style="color: var(--expense);">₹0.00</span>
           </div>
 
           <div class="metric-card">
             <span class="metric-card-label">Top Income Source</span>
             <span class="metric-card-val" id="metricTopIncome" style="font-size: 1.25rem;">—</span>
-            <span class="metric-card-sub" id="metricTopIncomeSub" style="color: var(--income);">$0.00</span>
+            <span class="metric-card-sub" id="metricTopIncomeSub" style="color: var(--income);">₹0.00</span>
           </div>
         </div>
 

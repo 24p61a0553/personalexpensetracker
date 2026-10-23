@@ -250,62 +250,98 @@ This automatically copies the WAR to `C:\apache-tomcat-9\webapps\PersonalExpense
 
 ---
 
-## 🚢 Render Cloud Deployment Instructions
+## 🚢 Render Cloud Deployment Instructions (Beginner-Friendly)
 
-Personal Expense Tracker includes a production-ready, multi-stage **Dockerfile** configured specifically for Render's dynamic `$PORT` environment variable.
-
-### Step 1: Upload the Project to GitHub
-1. Initialize git in the project root:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit of Personal Expense Tracker"
-   ```
-2. Create a new repository on [GitHub](https://github.com/) named `personal-expense-tracker`.
-3. Link your remote repository and push:
-   ```bash
-   git remote add origin https://github.com/<YOUR_GITHUB_USERNAME>/personal-expense-tracker.git
-   git branch -M main
-   git push -u origin main
-   ```
+Personal Expense Tracker is configured for cloud deployment on **Render** using a multi-stage **Dockerfile** that runs on **Apache Tomcat 9**, automatically respects Render's dynamic `$PORT`, enables `RemoteIpValve` for HTTPS SSL reverse-proxy termination, and connects securely via JDBC over SSL to any cloud MySQL database.
 
 ---
 
-### Step 2: Set Up a Cloud MySQL Database (e.g. Aiven, Railway, or TiDB)
-1. Create a free MySQL database instance on [Aiven.io](https://aiven.io/), [Railway.app](https://railway.app/), or [TiDB Cloud](https://tidbcloud.com/).
-2. Connect using MySQL Workbench and execute `database/database.sql` to import the tables and seed data.
-3. Note your cloud database credentials:
-   - Host (e.g. `mysql-xyz.aivencloud.com`)
-   - Port (e.g. `12345`)
-   - Database Name (`expense_tracker`)
-   - User (`avnadmin`)
-   - Password (`YourCloudPassword`)
+### Step 1: Push Project Updates to GitHub
+Your local repository is already connected to:
+`https://github.com/24p61a0553/personalexpensetracker.git`
+
+To push the latest code:
+```bash
+git add .
+git commit -m "Configure Render cloud deployment with cloud JDBC and Srinivas profile"
+git push -u origin main
+```
 
 ---
 
-### Step 3: Deploy to Render as a Web Service
-1. Log in to [Render](https://render.com/) and click **New +** > **Web Service**.
-2. Connect your GitHub repository: `personal-expense-tracker`.
-3. Configure the service settings:
-   - **Name**: `personal-expense-tracker`
-   - **Region**: Choose the region closest to your database.
-   - **Runtime**: **Docker** (Render will detect the `Dockerfile` automatically).
-   - **Instance Type**: Free.
-4. Scroll down to **Environment Variables** and add:
-   | Key | Value |
+### Step 2: Set Up Your Cloud MySQL Database
+You can use any cloud-hosted MySQL provider, such as:
+* **Aiven MySQL** (Free tier available at [aiven.io](https://aiven.io/))
+* **Railway MySQL** ([railway.app](https://railway.app/))
+* **TiDB Cloud Serverless** ([tidbcloud.com](https://tidbcloud.com/))
+* **DigitalOcean / AWS RDS / Cleardb**
+
+#### A. Initialize the Cloud Database Schema
+Open your cloud provider's MySQL query console (or connect via MySQL Workbench or DBeaver) and run the safe cloud initialization script:
+* File: **[`database/cloud_init.sql`](database/cloud_init.sql)**
+* This script uses `CREATE TABLE IF NOT EXISTS` and `ON DUPLICATE KEY UPDATE`.
+* It safely creates:
+  1. `expense_user_profile` with default person name **Srinivas**.
+  2. `categories` table with 15 initial income and expense categories.
+  3. `transactions` table with initial demo records associated with **Srinivas**.
+* It never drops or deletes any tables.
+
+#### B. Note Your Cloud Database Connection Details
+From your cloud database dashboard, copy:
+- **Host**: e.g., `mysql-1234abcd-myproject.aivencloud.com`
+- **Port**: e.g., `12345` (or `3306`)
+- **Database Name**: e.g., `defaultdb` or `expense_tracker`
+- **User**: e.g., `avnadmin` or `root`
+- **Password**: *(Keep this private; never commit or paste it into public chats!)*
+
+---
+
+### Step 3: Create the Web Service on Render
+
+1. Log in to your [Render Dashboard](https://dashboard.render.com/).
+2. Click **New +** (top right) and select **Web Service**.
+3. Choose **Build and deploy from a Git repository**.
+4. Connect or select your GitHub repository:
+   `24p61a0553/personalexpensetracker`
+5. Configure the web service settings:
+   * **Name**: `personalexpensetracker` (or your preferred name)
+   * **Region**: Choose the region closest to your cloud database (e.g. Frankfurt, Oregon, Singapore)
+   * **Branch**: `main`
+   * **Runtime**: **Docker** *(Render detects the root `Dockerfile` automatically)*
+   * **Instance Type**: **Free**
+6. Scroll down to the **Environment Variables** section. Click **Add Environment Variable** for each of the following:
+
+   | Environment Variable | Description / Example Value |
    | :--- | :--- |
-   | `DB_HOST` | `<Your cloud database host>` |
-   | `DB_PORT` | `<Your cloud database port, e.g. 3306 or 12345>` |
-   | `DB_NAME` | `expense_tracker` |
-   | `DB_USER` | `<Your cloud database user>` |
-   | `DB_PASS` | `<Your cloud database password>` |
-   *(Alternatively, set `DATABASE_URL` = `mysql://user:pass@host:port/expense_tracker`)*
-5. Click **Create Web Service**.
-6. Render will build the Docker container using Ant, deploy Apache Tomcat 9, bind to Render's `$PORT`, and provide a public URL like:
+   | `DB_HOST` | Hostname of your cloud database (e.g. `mysql-xyz.aivencloud.com`) |
+   | `DB_PORT` | Port of your cloud database (e.g. `3306` or `12345`) |
+   | `DB_NAME` | Database name (e.g. `defaultdb` or `expense_tracker`) |
+   | `DB_USER` | Database username (e.g. `avnadmin` or `root`) |
+   | `DB_PASS` | Your secure cloud database password *(Render masks this automatically)* |
+   | `DB_SSL` | `true` *(Enables SSL encryption between Tomcat and Cloud MySQL)* |
+
+   > **Alternative (Single Variable):** If your cloud provider gives a full connection URI (e.g. `mysql://user:pass@host:port/dbname`), you can simply add a single environment variable named `DATABASE_URL` with that value.
+
+7. Click **Create Web Service** at the bottom of the page.
+
+---
+
+### Step 4: Monitor Build & Verify Deployment
+
+1. Render will fetch the latest code from `main`, execute the multi-stage Docker build with Apache Ant, deploy the WAR as `ROOT.war`, and launch Tomcat on Render's assigned `$PORT`.
+2. In the Render service logs, look for:
    ```
-   https://personal-expense-tracker.onrender.com/
+   [Startup] Binding Tomcat HTTP connector to port: 10000
+   [DBConnection] SUCCESS: Connected to MySQL database (...)
+   [DBConnection] Verified schema tables (expense_user_profile, categories, transactions).
    ```
-7. Open the URL to access your deployed Personal Expense Tracker!
+3. Once the deployment status turns green (**Live**), click your public Render URL:
+   `https://personalexpensetracker.onrender.com/` (or your specific service name URL).
+4. Verify:
+   - Header Account Profile shows **Srinivas**.
+   - Sidebar displays **Welcome, Srinivas**.
+   - Currency displays in Indian Rupees (**₹**) with Indian number formatting (e.g., `₹17,250.50`).
+   - Adding and editing transactions persists directly into your cloud MySQL database.
 
 ---
 

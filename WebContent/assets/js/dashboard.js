@@ -10,6 +10,7 @@ let pendingDeleteId = null;
 let cachedCategories = [];
 
 document.addEventListener('DOMContentLoaded', () => {
+  API.initPersonProfile();
   initDateDisplay();
   loadCategories();
   loadDashboardData();
@@ -273,7 +274,7 @@ async function loadAndRenderMonthlyChart() {
             ticks: {
               color: '#94a3b8',
               font: { family: 'Inter', size: 11 },
-              callback: value => '$' + value
+              callback: value => '₹' + Number(value).toLocaleString('en-IN')
             }
           }
         },
@@ -348,12 +349,22 @@ function renderRecentTransactions(transactions) {
 }
 
 function setupEventListeners() {
-  // Mobile sidebar toggle
+  // Mobile sidebar toggle and backdrop
   const toggleBtn = document.getElementById('sidebarToggleBtn');
   const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+
   if (toggleBtn && sidebar) {
     toggleBtn.addEventListener('click', () => {
       sidebar.classList.toggle('open');
+      if (backdrop) backdrop.classList.toggle('active');
+    });
+  }
+
+  if (backdrop && sidebar) {
+    backdrop.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      backdrop.classList.remove('active');
     });
   }
 

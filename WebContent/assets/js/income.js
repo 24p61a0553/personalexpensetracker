@@ -8,6 +8,7 @@ let currentEditingId = null;
 let pendingDeleteId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+  API.initPersonProfile();
   initDatePresets();
   loadIncomeCategories();
   loadIncomes();
@@ -179,8 +180,20 @@ function setupEventListeners() {
 
   const toggleBtn = document.getElementById('sidebarToggleBtn');
   const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+
   if (toggleBtn && sidebar) {
-    toggleBtn.addEventListener('click', () => sidebar.classList.toggle('open'));
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+      if (backdrop) backdrop.classList.toggle('active');
+    });
+  }
+
+  if (backdrop && sidebar) {
+    backdrop.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      backdrop.classList.remove('active');
+    });
   }
 }
 
@@ -348,7 +361,7 @@ function exportIncomeCSV() {
   const exportData = cachedIncomes.map(e => ({
     ID: e.id,
     Title: e.title,
-    Amount: e.amount,
+    'Amount (INR)': e.amount,
     Category: e.category,
     Date: e.transactionDate,
     PaymentMethod: e.paymentMethod,

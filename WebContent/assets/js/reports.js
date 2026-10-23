@@ -8,6 +8,7 @@ let incomeSourceChart = null;
 let cachedReportData = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+  API.initPersonProfile();
   loadReports();
   setupEventListeners();
 });
@@ -113,7 +114,7 @@ function renderCashflowChart(trends) {
           ticks: {
             color: '#94a3b8',
             font: { family: 'Inter', size: 11 },
-            callback: v => '$' + v
+            callback: v => '₹' + Number(v).toLocaleString('en-IN')
           }
         }
       },
@@ -251,8 +252,20 @@ function renderMonthlyBreakdownTable(trends) {
 function setupEventListeners() {
   const toggleBtn = document.getElementById('sidebarToggleBtn');
   const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+
   if (toggleBtn && sidebar) {
-    toggleBtn.addEventListener('click', () => sidebar.classList.toggle('open'));
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+      if (backdrop) backdrop.classList.toggle('active');
+    });
+  }
+
+  if (backdrop && sidebar) {
+    backdrop.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      backdrop.classList.remove('active');
+    });
   }
 }
 
@@ -264,10 +277,10 @@ function exportReportCSV() {
 
   const exportData = cachedReportData.monthlyTrends.map(t => ({
     Month: t.monthLabel,
-    TotalIncome: t.income,
-    TotalExpense: t.expense,
-    NetSavings: t.netSavings,
-    SavingsRate: `${(t.savingsRate || 0).toFixed(1)}%`
+    'Total Income (INR)': t.income,
+    'Total Expense (INR)': t.expense,
+    'Net Savings (INR)': t.netSavings,
+    'Savings Rate': `${(t.savingsRate || 0).toFixed(1)}%`
   }));
 
   API.exportToCSV(exportData, `financial_report_${new Date().toISOString().split('T')[0]}.csv`);

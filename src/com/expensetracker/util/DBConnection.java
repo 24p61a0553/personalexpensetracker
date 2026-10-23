@@ -122,6 +122,16 @@ public class DBConnection {
 
         boolean isProd = isProductionEnvironment();
 
+        // 1. Detect environment-based configuration priority
+        if (System.getenv("DATABASE_URL") != null && !System.getenv("DATABASE_URL").trim().isEmpty()) {
+            configSource = "Environment variable (DATABASE_URL)";
+        } else if (System.getenv("MYSQL_URL") != null && !System.getenv("MYSQL_URL").trim().isEmpty()) {
+            configSource = "Environment variable (MYSQL_URL)";
+        } else if (System.getenv("DB_HOST") != null && !System.getenv("DB_HOST").trim().isEmpty()) {
+            String envDbName = System.getenv("DB_NAME") != null ? System.getenv("DB_NAME") : "expense_tracker";
+            configSource = "Environment variables (DB_HOST=" + System.getenv("DB_HOST") + ", DB_NAME=" + envDbName + ")";
+        }
+
         // Check for direct database URL (e.g. DATABASE_URL, DB_URL, MYSQL_URL)
         String directUrl = resolveValue(
                 new String[]{"db.url", "jdbc.url", "DB_URL", "DATABASE_URL"},
@@ -136,7 +146,7 @@ public class DBConnection {
                 new String[]{"DB_HOST", "MYSQL_HOST", "MYSQLHOST", "DATABASE_HOST"},
                 props,
                 new String[]{"db.host", "mysql.host", "host"},
-                isProd ? null : "localhost"
+                "localhost"
         );
 
         String port = resolveValue(
@@ -160,10 +170,21 @@ public class DBConnection {
                 new String[]{"DB_USER", "DB_USERNAME", "MYSQL_USER"},
                 props,
                 new String[]{"db.user", "db.username", "username", "user"},
-                isProd ? null : "root"
+                "root"
         );
 
         password = resolvePassword(props);
+
+        boolean isRemoteHost = host != null && !host.equalsIgnoreCase("localhost") && !host.equals("127.0.0.1") && !host.equalsIgnoreCase("db");
+        String explicitSsl = System.getenv("DB_SSL");
+        String sslParam;
+        if (explicitSsl != null && !explicitSsl.trim().isEmpty()) {
+            sslParam = "true".equalsIgnoreCase(explicitSsl) ? "useSSL=true&requireSSL=false" : "useSSL=false";
+        } else if (isRemoteHost || isProd) {
+            sslParam = "useSSL=true&requireSSL=false";
+        } else {
+            sslParam = "useSSL=false";
+        }
 
         if (directUrl != null && !directUrl.trim().isEmpty()) {
             directUrl = directUrl.trim();
@@ -182,7 +203,7 @@ public class DBConnection {
 
                     url = "jdbc:mysql://" + hostPortDb;
                     if (!url.contains("?")) {
-                        url += "?useSSL=true&requireSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
+                        url += "?useSSL=true&requireSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=UTF-8";
                     }
                 } catch (Exception ex) {
                     url = directUrl.startsWith("jdbc:") ? directUrl : "jdbc:" + directUrl;
@@ -191,7 +212,6 @@ public class DBConnection {
                 url = directUrl.startsWith("jdbc:") ? directUrl : "jdbc:" + directUrl;
             }
         } else {
-            String sslParam = isProd ? "useSSL=true&requireSSL=false" : "useSSL=false";
             url = "jdbc:mysql://" + (host != null ? host : "localhost") + ":" + port + "/" + dbName
                     + "?" + sslParam + "&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8";
         }
@@ -269,7 +289,18 @@ public class DBConnection {
 
     private static void initSchema(Connection conn) {
         try (Statement stmt = conn.createStatement()) {
-            // Create categories table
+            // 1. Create expense_user_profile table
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS expense_user_profile (" +
+                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "person_name VARCHAR(100) NOT NULL DEFAULT 'Srinivas', " +
+                    "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" +
+                    ") ENGINE=InnoDB;");
+
+            // Seed default profile 'Srinivas' if none exists
+            stmt.executeUpdate("INSERT INTO expense_user_profile (id, person_name) VALUES (1, 'Srinivas') " +
+                    "ON DUPLICATE KEY UPDATE id=id;");
+
+            // 2. Create categories table
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS categories (" +
                     "id INT AUTO_INCREMENT PRIMARY KEY, " +
                     "name VARCHAR(60) NOT NULL UNIQUE, " +
@@ -280,7 +311,26 @@ public class DBConnection {
                     "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
                     ") ENGINE=InnoDB;");
 
-            // Create transactions table
+            // Seed standard categories if table is empty
+            stmt.executeUpdate("INSERT INTO categories (name, type, icon, color, description) VALUES " +
+                    "('Food & Dining', 'EXPENSE', 'fa-utensils', '#f59e0b', 'Groceries, restaurants, cafes'), " +
+                    "('Rent & Housing', 'EXPENSE', 'fa-home', '#ef4444', 'Apartment rent, property tax'), " +
+                    "('Utilities', 'EXPENSE', 'fa-bolt', '#3b82f6', 'Electricity, water, gas, broadband'), " +
+                    "('Transportation', 'EXPENSE', 'fa-car', '#8b5cf6', 'Fuel, public transit, cab fares'), " +
+                    "('Entertainment', 'EXPENSE', 'fa-film', '#ec4899', 'Movies, streaming, games'), " +
+                    "('Shopping', 'EXPENSE', 'fa-shopping-bag', '#14b8a6', 'Clothing, electronics, goods'), " +
+                    "('Healthcare', 'EXPENSE', 'fa-heartbeat', '#06b6d4', 'Medication, doctor visits, health'), " +
+                    "('Education', 'EXPENSE', 'fa-graduation-cap', '#6366f1', 'Tuition, textbooks, courses'), " +
+                    "('Miscellaneous', 'EXPENSE', 'fa-ellipsis-h', '#64748b', 'Other unplanned personal expenditures'), " +
+                    "('Salary', 'INCOME', 'fa-money-bill-wave', '#10b981', 'Primary job monthly salary'), " +
+                    "('Freelance', 'INCOME', 'fa-laptop-code', '#06b6d4', 'Freelancing projects and contract work'), " +
+                    "('Investments', 'INCOME', 'fa-chart-line', '#3b82f6', 'Dividends, capital gains, interest'), " +
+                    "('Business', 'INCOME', 'fa-briefcase', '#8b5cf6', 'Side business revenue, sales'), " +
+                    "('Gifts & Grants', 'INCOME', 'fa-gift', '#ec4899', 'Cash gifts, allowances, grants'), " +
+                    "('Other Income', 'INCOME', 'fa-wallet', '#10b981', 'Refunds, cashbacks, other income') " +
+                    "ON DUPLICATE KEY UPDATE description=VALUES(description);");
+
+            // 3. Create transactions table (with profile_id and person_name)
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS transactions (" +
                     "id INT AUTO_INCREMENT PRIMARY KEY, " +
                     "title VARCHAR(150) NOT NULL, " +
@@ -290,14 +340,25 @@ public class DBConnection {
                     "transaction_date DATE NOT NULL, " +
                     "payment_method VARCHAR(50) DEFAULT 'Cash', " +
                     "notes VARCHAR(500), " +
+                    "profile_id INT DEFAULT 1, " +
+                    "person_name VARCHAR(100) DEFAULT 'Srinivas', " +
                     "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                     "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, " +
                     "INDEX idx_trans_date (transaction_date), " +
                     "INDEX idx_trans_type (type), " +
-                    "INDEX idx_trans_category (category)" +
+                    "INDEX idx_trans_category (category), " +
+                    "INDEX idx_trans_profile (profile_id)" +
                     ") ENGINE=InnoDB;");
 
-            System.out.println("[DBConnection] Verified schema tables (categories, transactions).");
+            // Ensure profile_id and person_name columns exist if transactions table already pre-existed
+            try {
+                stmt.executeUpdate("ALTER TABLE transactions ADD COLUMN profile_id INT DEFAULT 1;");
+            } catch (SQLException ignored) {}
+            try {
+                stmt.executeUpdate("ALTER TABLE transactions ADD COLUMN person_name VARCHAR(100) DEFAULT 'Srinivas';");
+            } catch (SQLException ignored) {}
+
+            System.out.println("[DBConnection] Verified schema tables (expense_user_profile, categories, transactions).");
         } catch (SQLException e) {
             System.err.println("[DBConnection] Schema initialization check: " + e.getMessage());
         }

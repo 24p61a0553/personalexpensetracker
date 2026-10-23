@@ -17,6 +17,8 @@ public class Transaction {
     private String transactionDate;  // ISO string format "yyyy-MM-dd"
     private String paymentMethod;    // e.g. "Cash", "Credit Card", "Bank Transfer", "Debit Card", "PayPal"
     private String notes;
+    private int profileId = 1;
+    private String personName;
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
@@ -97,6 +99,22 @@ public class Transaction {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public int getProfileId() {
+        return profileId;
+    }
+
+    public void setProfileId(int profileId) {
+        this.profileId = profileId;
+    }
+
+    public String getPersonName() {
+        return personName;
+    }
+
+    public void setPersonName(String personName) {
+        this.personName = personName;
     }
 
     public Timestamp getCreatedAt() {

@@ -15,6 +15,9 @@
 </head>
 <body>
 
+  <!-- Mobile Backdrop Overlay -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
   <div class="app-layout">
     <!-- Sidebar Navigation -->
     <aside class="sidebar" id="sidebar">
@@ -22,6 +25,17 @@
         <div class="brand-icon"><i class="fas fa-wallet"></i></div>
         <div class="brand-text">Expense<span>Tracker</span></div>
       </a>
+
+      <!-- User Profile Badge in Sidebar -->
+      <div class="sidebar-user-card">
+        <div class="sidebar-user-avatar">
+          <i class="fas fa-user-circle"></i>
+        </div>
+        <div class="sidebar-user-details">
+          <span class="sidebar-user-greeting">Welcome,</span>
+          <span class="sidebar-user-name display-person-name" id="sidebarPersonName">Srinivas</span>
+        </div>
+      </div>
 
       <nav class="sidebar-nav">
         <a href="index.html" class="nav-item active">
@@ -58,7 +72,10 @@
           <button class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Toggle navigation">
             <i class="fas fa-bars"></i>
           </button>
-          <h1 class="page-heading">Financial Overview</h1>
+          <div class="heading-wrapper">
+            <h1 class="page-heading">Financial Dashboard</h1>
+            <p class="page-subheading">Real-time income, expense &amp; cashflow overview</p>
+          </div>
         </div>
 
         <div class="topbar-right">
@@ -66,39 +83,48 @@
             <i class="far fa-calendar-alt"></i>
             <span id="currentDateText">Today</span>
           </div>
-          <button class="btn btn-primary" onclick="openAddTransactionModal('EXPENSE')">
-            <i class="fas fa-plus"></i> Add Transaction
+          <button class="btn btn-income btn-sm" onclick="openAddTransactionModal('INCOME')">
+            <i class="fas fa-plus"></i> Add Income
+          </button>
+          <button class="btn btn-expense btn-sm" onclick="openAddTransactionModal('EXPENSE')">
+            <i class="fas fa-plus"></i> Add Expense
           </button>
         </div>
       </header>
 
-      <!-- Page Content -->
-      <main class="page-content">
-
-        <!-- Welcome Banner -->
-        <div class="welcome-banner">
-          <div class="banner-left">
-            <h2>Track, Budget &amp; Optimize Your Wealth</h2>
-            <p>Direct real-time financial tracking powered by Java Servlets &amp; MySQL.</p>
+      <!-- Dedicated Person Profile Header Bar -->
+      <div class="profile-header-bar">
+        <div class="profile-badge">
+          <div class="profile-avatar-icon">
+            <i class="fas fa-user-check"></i>
           </div>
-          <div class="banner-actions">
-            <button class="btn btn-income" onclick="openAddTransactionModal('INCOME')">
-              <i class="fas fa-arrow-down"></i> + Income
-            </button>
-            <button class="btn btn-expense" onclick="openAddTransactionModal('EXPENSE')">
-              <i class="fas fa-arrow-up"></i> - Expense
-            </button>
+          <div class="profile-status">
+            <span class="profile-label">Account Profile</span>
+            <span class="profile-name-prominent display-person-name" id="displayPersonName">Srinivas</span>
           </div>
         </div>
+        <div class="profile-edit-group">
+          <div class="input-with-icon">
+            <i class="fas fa-user-pen"></i>
+            <input type="text" id="personNameInput" class="person-input" value="Srinivas" placeholder="Enter your name" maxlength="100" autocomplete="off" aria-label="Person Name">
+          </div>
+          <button type="button" id="savePersonNameBtn" class="btn btn-save-name">
+            <i class="fas fa-save"></i> Save Name
+          </button>
+        </div>
+      </div>
 
-        <!-- 1. KPI Cards Grid -->
+      <!-- Page Content: Starts immediately with Financial Summary KPI Cards -->
+      <main class="page-content">
+
+        <!-- 1. KPI Cards Grid (Aligned cleanly at the top of content) -->
         <div class="kpi-grid">
           <!-- Total Income -->
           <div class="kpi-card kpi-income">
             <div class="kpi-icon"><i class="fas fa-arrow-trend-up"></i></div>
             <div class="kpi-details">
               <div class="kpi-label">Total Income</div>
-              <div class="kpi-value" id="kpiTotalIncome">$0.00</div>
+              <div class="kpi-value" id="kpiTotalIncome">₹0.00</div>
               <div class="kpi-subtext" style="color: var(--income);"><i class="fas fa-shield-alt"></i> Cumulative Inflow</div>
             </div>
           </div>
@@ -108,7 +134,7 @@
             <div class="kpi-icon"><i class="fas fa-arrow-trend-down"></i></div>
             <div class="kpi-details">
               <div class="kpi-label">Total Expenses</div>
-              <div class="kpi-value" id="kpiTotalExpense">$0.00</div>
+              <div class="kpi-value" id="kpiTotalExpense">₹0.00</div>
               <div class="kpi-subtext" style="color: var(--expense);"><i class="fas fa-receipt"></i> Cumulative Outflow</div>
             </div>
           </div>
@@ -118,7 +144,7 @@
             <div class="kpi-icon"><i class="fas fa-scale-balanced"></i></div>
             <div class="kpi-details">
               <div class="kpi-label">Remaining Balance</div>
-              <div class="kpi-value" id="kpiNetBalance">$0.00</div>
+              <div class="kpi-value" id="kpiNetBalance">₹0.00</div>
               <div class="kpi-subtext" id="kpiSavingsRate">0.0% savings rate</div>
             </div>
           </div>
@@ -128,7 +154,7 @@
             <div class="kpi-icon"><i class="fas fa-calendar-check"></i></div>
             <div class="kpi-details">
               <div class="kpi-label">This Month's Outflow</div>
-              <div class="kpi-value" id="kpiThisMonthExpense">$0.00</div>
+              <div class="kpi-value" id="kpiThisMonthExpense">₹0.00</div>
               <div class="kpi-subtext"><i class="fas fa-clock"></i> Current Billing Cycle</div>
             </div>
           </div>
@@ -237,7 +263,7 @@
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div class="form-group">
-              <label class="form-label" for="txAmount">Amount ($) *</label>
+              <label class="form-label" for="txAmount">Amount (₹) *</label>
               <input type="number" step="0.01" min="0.01" class="form-control" id="txAmount" placeholder="0.00" required>
             </div>
             <div class="form-group">

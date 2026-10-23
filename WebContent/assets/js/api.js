@@ -68,15 +68,92 @@ const API = {
     });
   },
 
-  // Currency Formatter: $1,234.56
+  // Currency Formatter: Indian Rupee (₹) with Indian number format (e.g. ₹1,25,000.00)
   formatCurrency(amount) {
     const num = parseFloat(amount || 0);
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(num);
+  },
+
+  async getProfile() {
+    return this.get('/api/profile');
+  },
+
+  async saveProfile(personName) {
+    return this.post('/api/profile', { personName });
+  },
+
+  // Initialize and synchronize Person Name across the application
+  async initPersonProfile() {
+    const nameInput = document.getElementById('personNameInput');
+    const saveBtn = document.getElementById('savePersonNameBtn');
+    const displayEls = document.querySelectorAll('.display-person-name, #displayPersonName, #sidebarPersonName');
+
+    const updateDisplays = (name) => {
+      const isSaved = name && name.trim() && name.trim() !== 'Enter your name';
+      const val = isSaved ? name.trim() : 'Srinivas';
+      displayEls.forEach(el => {
+        el.textContent = val;
+        el.classList.remove('not-set');
+      });
+      if (nameInput) {
+        nameInput.value = val;
+      }
+    };
+
+    try {
+      const res = await this.getProfile();
+      if (res && res.data && res.data.personName) {
+        updateDisplays(res.data.personName);
+      } else {
+        updateDisplays('Srinivas');
+      }
+    } catch (e) {
+      console.warn('Could not load profile from server:', e);
+      updateDisplays('Srinivas');
+    }
+
+    if (saveBtn && nameInput) {
+      saveBtn.addEventListener('click', async () => {
+        const entered = nameInput.value.trim();
+        if (!entered) {
+          API.showToast('Please enter your name before saving.', 'warning');
+          nameInput.focus();
+          return;
+        }
+
+        const originalHtml = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        saveBtn.disabled = true;
+
+        try {
+          const res = await API.saveProfile(entered);
+          if (res && res.success) {
+            updateDisplays(res.data?.personName || entered);
+            API.showToast('Person name saved successfully to database!', 'success');
+          } else {
+            throw new Error(res?.message || 'Failed to save name');
+          }
+        } catch (err) {
+          console.error('Error saving name:', err);
+          API.showToast(err.message || 'Database error: Could not save person name.', 'error');
+        } finally {
+          saveBtn.innerHTML = originalHtml;
+          saveBtn.disabled = false;
+        }
+      });
+
+      nameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          saveBtn.click();
+        }
+      });
+    }
   },
 
   // Date Formatter: "Oct 24, 2026"

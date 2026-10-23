@@ -17,13 +17,15 @@ import java.util.*;
  */
 public class TransactionDAO {
 
+    private final ProfileDAO profileDAO = new ProfileDAO();
+
     public List<Transaction> getAll(String type, String category, String startDate, String endDate, String search) {
         if (!DBConnection.isAvailable()) {
             return DemoDataStore.getAll(type, category, startDate, endDate, search);
         }
 
         List<Transaction> list = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("SELECT id, title, amount, type, category, transaction_date, payment_method, notes, created_at, updated_at FROM transactions WHERE 1=1 ");
+        StringBuilder sql = new StringBuilder("SELECT id, title, amount, type, category, transaction_date, payment_method, notes, profile_id, person_name, created_at, updated_at FROM transactions WHERE 1=1 ");
         List<Object> params = new ArrayList<>();
 
         if (type != null && !type.trim().isEmpty() && !"ALL".equalsIgnoreCase(type)) {
@@ -82,7 +84,7 @@ public class TransactionDAO {
             return DemoDataStore.getById(id);
         }
 
-        String sql = "SELECT id, title, amount, type, category, transaction_date, payment_method, notes, created_at, updated_at FROM transactions WHERE id = ?";
+        String sql = "SELECT id, title, amount, type, category, transaction_date, payment_method, notes, profile_id, person_name, created_at, updated_at FROM transactions WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -104,7 +106,13 @@ public class TransactionDAO {
             return DemoDataStore.insert(t);
         }
 
-        String sql = "INSERT INTO transactions (title, amount, type, category, transaction_date, payment_method, notes) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String personName = t.getPersonName();
+        if (personName == null || personName.trim().isEmpty() || "Enter your name".equalsIgnoreCase(personName.trim())) {
+            personName = profileDAO.getPersonName();
+        }
+        int profileId = t.getProfileId() > 0 ? t.getProfileId() : 1;
+
+        String sql = "INSERT INTO transactions (title, amount, type, category, transaction_date, payment_method, notes, profile_id, person_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -115,6 +123,8 @@ public class TransactionDAO {
             ps.setDate(5, java.sql.Date.valueOf(t.getTransactionDate()));
             ps.setString(6, t.getPaymentMethod() != null ? t.getPaymentMethod() : "Cash");
             ps.setString(7, t.getNotes());
+            ps.setInt(8, profileId);
+            ps.setString(9, personName);
 
             int affectedRows = ps.executeUpdate();
             if (affectedRows > 0) {
@@ -186,6 +196,7 @@ public class TransactionDAO {
         DashboardSummary ds = new DashboardSummary();
         ds.setDatabaseConnected(true);
         ds.setDatabaseSource("MySQL Database (" + DBConnection.getConfigSource() + ")");
+        ds.setPersonName(profileDAO.getPersonName());
 
         String currentMonth = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM"));
 
@@ -260,7 +271,7 @@ public class TransactionDAO {
             ds.setCategoryBreakdown(catList);
 
             // 4. Recent Transactions (last 8)
-            String recentSql = "SELECT id, title, amount, type, category, transaction_date, payment_method, notes, created_at, updated_at " +
+            String recentSql = "SELECT id, title, amount, type, category, transaction_date, payment_method, notes, profile_id, person_name, created_at, updated_at " +
                     "FROM transactions ORDER BY transaction_date DESC, id DESC LIMIT 8";
             List<Transaction> recentList = new ArrayList<>();
             try (PreparedStatement ps = conn.prepareStatement(recentSql);
@@ -277,6 +288,7 @@ public class TransactionDAO {
             DashboardSummary dsFallback = DemoDataStore.getDashboardSummary();
             dsFallback.setDatabaseConnected(false);
             dsFallback.setDatabaseSource("Offline Mode: " + e.getMessage());
+            dsFallback.setPersonName(profileDAO.getPersonName());
             return dsFallback;
         }
     }
@@ -416,6 +428,10 @@ public class TransactionDAO {
         t.setTransactionDate(d != null ? d.toString() : "");
         t.setPaymentMethod(rs.getString("payment_method"));
         t.setNotes(rs.getString("notes"));
+        try {
+            t.setProfileId(rs.getInt("profile_id"));
+            t.setPersonName(rs.getString("person_name"));
+        } catch (SQLException ignored) {}
         t.setCreatedAt(rs.getTimestamp("created_at"));
         t.setUpdatedAt(rs.getTimestamp("updated_at"));
         return t;

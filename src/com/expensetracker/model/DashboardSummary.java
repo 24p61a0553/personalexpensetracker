@@ -20,6 +20,7 @@ public class DashboardSummary {
     private List<Transaction> recentTransactions;
     private boolean databaseConnected;
     private String databaseSource;
+    private String personName = "Srinivas";
 
     public DashboardSummary() {
         this.totalIncome = BigDecimal.ZERO;
@@ -117,5 +118,13 @@ public class DashboardSummary {
 
     public void setDatabaseSource(String databaseSource) {
         this.databaseSource = databaseSource;
+    }
+
+    public String getPersonName() {
+        return personName;
+    }
+
+    public void setPersonName(String personName) {
+        this.personName = personName;
     }
 }

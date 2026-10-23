@@ -13,6 +13,9 @@
 </head>
 <body>
 
+  <!-- Mobile Backdrop Overlay -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
   <div class="app-layout">
     <!-- Sidebar Navigation -->
     <aside class="sidebar" id="sidebar">
@@ -20,6 +23,17 @@
         <div class="brand-icon"><i class="fas fa-wallet"></i></div>
         <div class="brand-text">Expense<span>Tracker</span></div>
       </a>
+
+      <!-- User Profile Badge in Sidebar -->
+      <div class="sidebar-user-card">
+        <div class="sidebar-user-avatar">
+          <i class="fas fa-user-circle"></i>
+        </div>
+        <div class="sidebar-user-details">
+          <span class="sidebar-user-greeting">Welcome,</span>
+          <span class="sidebar-user-name display-person-name" id="sidebarPersonName">Srinivas</span>
+        </div>
+      </div>
 
       <nav class="sidebar-nav">
         <a href="index.html" class="nav-item">
@@ -54,18 +68,43 @@
           <button class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Toggle navigation">
             <i class="fas fa-bars"></i>
           </button>
-          <h1 class="page-heading">Expense Management</h1>
+          <div class="heading-wrapper">
+            <h1 class="page-heading">Expense Management</h1>
+            <p class="page-subheading">Track, filter and categorize your expenditures</p>
+          </div>
         </div>
 
         <div class="topbar-right">
           <button class="btn btn-secondary btn-sm" onclick="exportExpensesCSV()">
             <i class="fas fa-file-csv"></i> Export CSV
           </button>
-          <button class="btn btn-expense" onclick="openAddExpenseModal()">
+          <button class="btn btn-expense btn-sm" onclick="openAddExpenseModal()">
             <i class="fas fa-plus"></i> Add Expense
           </button>
         </div>
       </header>
+
+      <!-- Dedicated Person Profile Header Bar -->
+      <div class="profile-header-bar">
+        <div class="profile-badge">
+          <div class="profile-avatar-icon">
+            <i class="fas fa-user-check"></i>
+          </div>
+          <div class="profile-status">
+            <span class="profile-label">Account Profile</span>
+            <span class="profile-name-prominent display-person-name" id="displayPersonName">Srinivas</span>
+          </div>
+        </div>
+        <div class="profile-edit-group">
+          <div class="input-with-icon">
+            <i class="fas fa-user-pen"></i>
+            <input type="text" id="personNameInput" class="person-input" value="Srinivas" placeholder="Enter your name" maxlength="100" autocomplete="off" aria-label="Person Name">
+          </div>
+          <button type="button" id="savePersonNameBtn" class="btn btn-save-name">
+            <i class="fas fa-save"></i> Save Name
+          </button>
+        </div>
+      </div>
 
       <main class="page-content">
 
@@ -73,7 +112,7 @@
         <div class="stats-bar">
           <div class="stat-box">
             <span class="stat-box-label">Total Expenses</span>
-            <span class="stat-box-val" id="statTotalExpenses" style="color: var(--expense);">$0.00</span>
+            <span class="stat-box-val" id="statTotalExpenses" style="color: var(--expense);">₹0.00</span>
           </div>
           <div class="stat-box">
             <span class="stat-box-label">Recorded Expenses</span>
@@ -81,7 +120,7 @@
           </div>
           <div class="stat-box">
             <span class="stat-box-label">Average Expense</span>
-            <span class="stat-box-val" id="statAvgExpense">$0.00</span>
+            <span class="stat-box-val" id="statAvgExpense">₹0.00</span>
           </div>
           <div class="stat-box">
             <span class="stat-box-label">Top Spending Category</span>
@@ -172,7 +211,7 @@
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div class="form-group">
-              <label class="form-label" for="txAmount">Amount ($) *</label>
+              <label class="form-label" for="txAmount">Amount (₹) *</label>
               <input type="number" step="0.01" min="0.01" class="form-control" id="txAmount" placeholder="0.00" required>
             </div>
             <div class="form-group">

@@ -59,6 +59,16 @@
         <url-pattern>/api/categories/*</url-pattern>
     </servlet-mapping>
 
+    <servlet>
+        <servlet-name>ProfileServlet</servlet-name>
+        <servlet-class>com.expensetracker.controller.ProfileServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ProfileServlet</servlet-name>
+        <url-pattern>/api/profile</url-pattern>
+        <url-pattern>/api/profile/*</url-pattern>
+    </servlet-mapping>
+
     <!-- 3. Session Configuration -->
     <session-config>
         <session-timeout>240</session-timeout>
