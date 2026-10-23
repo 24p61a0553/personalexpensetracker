@@ -1,0 +1,65 @@
+/* =====================================================================
+   Personal Expense Tracker - Reports & Analytics Styling
+   ===================================================================== */
+
+.reports-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.report-chart-card {
+  min-height: 380px;
+  display: flex;
+  flex-direction: column;
+}
+
+.report-summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.metric-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-card-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.metric-card-val {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.metric-card-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.savings-healthy {
+  color: var(--income);
+}
+
+.savings-warning {
+  color: var(--warning);
+}
+
+.savings-danger {
+  color: var(--expense);
+}

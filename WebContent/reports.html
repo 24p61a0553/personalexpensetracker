@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports &amp; Analytics &bull; Personal Expense Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/global.css">
+  <link rel="stylesheet" href="assets/css/reports.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <a href="index.html" class="sidebar-brand">
+        <div class="brand-icon"><i class="fas fa-wallet"></i></div>
+        <div class="brand-text">Expense<span>Tracker</span></div>
+      </a>
+
+      <nav class="sidebar-nav">
+        <a href="index.html" class="nav-item">
+          <i class="fas fa-th-large"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="expenses.html" class="nav-item">
+          <i class="fas fa-arrow-circle-up"></i>
+          <span>Expenses</span>
+        </a>
+        <a href="income.html" class="nav-item">
+          <i class="fas fa-arrow-circle-down"></i>
+          <span>Income</span>
+        </a>
+        <a href="reports.html" class="nav-item active">
+          <i class="fas fa-chart-pie"></i>
+          <span>Reports &amp; Trends</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="index.html" class="btn btn-secondary btn-sm" style="width: 100%;">
+          <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Toggle navigation">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h1 class="page-heading">Financial Reports &amp; Analytics</h1>
+        </div>
+
+        <div class="topbar-right">
+          <button class="btn btn-secondary btn-sm" onclick="printReport()">
+            <i class="fas fa-print"></i> Print Report
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="exportReportCSV()">
+            <i class="fas fa-file-csv"></i> Export CSV
+          </button>
+        </div>
+      </header>
+
+      <main class="page-content">
+
+        <!-- Summary Metrics Cards -->
+        <div class="report-summary-metrics">
+          <div class="metric-card">
+            <span class="metric-card-label">Avg. Monthly Burn</span>
+            <span class="metric-card-val" id="metricAvgExpense">$0.00</span>
+            <span class="metric-card-sub"><i class="fas fa-calculator"></i> Monthly Spending Mean</span>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-card-label">Cumulative Savings Rate</span>
+            <span class="metric-card-val" id="metricSavingsRate">0.0%</span>
+            <span class="metric-card-sub"><i class="fas fa-piggy-bank"></i> Net Savings vs Inflow</span>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-card-label">Top Expense Category</span>
+            <span class="metric-card-val" id="metricTopExpense" style="font-size: 1.25rem;">—</span>
+            <span class="metric-card-sub" id="metricTopExpenseSub" style="color: var(--expense);">$0.00</span>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-card-label">Top Income Source</span>
+            <span class="metric-card-val" id="metricTopIncome" style="font-size: 1.25rem;">—</span>
+            <span class="metric-card-sub" id="metricTopIncomeSub" style="color: var(--income);">$0.00</span>
+          </div>
+        </div>
+
+        <!-- Cashflow Trends Chart (Full Width) -->
+        <div class="card" style="margin-bottom: 2rem;">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="fas fa-chart-line" style="color: #38bdf8;"></i> Monthly Cashflow Dynamics (Income vs Expense vs Net Savings)
+            </h2>
+          </div>
+          <div style="height: 340px; position: relative;">
+            <canvas id="monthlyCashflowChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Distribution Breakdown Charts (Side by Side) -->
+        <div class="reports-charts-grid">
+          <!-- Expense Categories -->
+          <div class="card report-chart-card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <i class="fas fa-chart-pie" style="color: var(--expense);"></i> Expense Breakdown by Category
+              </h2>
+            </div>
+            <div style="height: 280px; position: relative;">
+              <canvas id="expenseCategoryChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Income Categories -->
+          <div class="card report-chart-card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <i class="fas fa-chart-pie" style="color: var(--income);"></i> Income Distribution by Source
+              </h2>
+            </div>
+            <div style="height: 280px; position: relative;">
+              <canvas id="incomeSourceChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detailed Monthly Breakdown Table -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="fas fa-table" style="color: var(--secondary);"></i> Monthly Performance Statement
+            </h2>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Total Inflow</th>
+                  <th>Total Outflow</th>
+                  <th>Net Savings</th>
+                  <th>Savings Rate</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="monthlyBreakdownTbody">
+                <!-- Populated via reports.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div id="toastContainer"></div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/reports.js"></script>
+</body>
+</html>

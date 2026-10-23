@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal Expense Tracker &bull; Financial Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/global.css">
+  <link rel="stylesheet" href="assets/css/dashboard.css">
+  <!-- Chart.js 4.4.1 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <a href="index.html" class="sidebar-brand">
+        <div class="brand-icon"><i class="fas fa-wallet"></i></div>
+        <div class="brand-text">Expense<span>Tracker</span></div>
+      </a>
+
+      <nav class="sidebar-nav">
+        <a href="index.html" class="nav-item active">
+          <i class="fas fa-th-large"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="expenses.html" class="nav-item">
+          <i class="fas fa-arrow-circle-up"></i>
+          <span>Expenses</span>
+        </a>
+        <a href="income.html" class="nav-item">
+          <i class="fas fa-arrow-circle-down"></i>
+          <span>Income</span>
+        </a>
+        <a href="reports.html" class="nav-item">
+          <i class="fas fa-chart-pie"></i>
+          <span>Reports &amp; Trends</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="db-status-pill">
+          <span class="status-dot offline" id="dbStatusDot"></span>
+          <span id="dbStatusText">Checking DB...</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-wrapper">
+      <!-- Topbar Header -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Toggle navigation">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h1 class="page-heading">Financial Overview</h1>
+        </div>
+
+        <div class="topbar-right">
+          <div class="current-date-badge">
+            <i class="far fa-calendar-alt"></i>
+            <span id="currentDateText">Today</span>
+          </div>
+          <button class="btn btn-primary" onclick="openAddTransactionModal('EXPENSE')">
+            <i class="fas fa-plus"></i> Add Transaction
+          </button>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-content">
+
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+          <div class="banner-left">
+            <h2>Track, Budget &amp; Optimize Your Wealth</h2>
+            <p>Direct real-time financial tracking powered by Java Servlets &amp; MySQL.</p>
+          </div>
+          <div class="banner-actions">
+            <button class="btn btn-income" onclick="openAddTransactionModal('INCOME')">
+              <i class="fas fa-arrow-down"></i> + Income
+            </button>
+            <button class="btn btn-expense" onclick="openAddTransactionModal('EXPENSE')">
+              <i class="fas fa-arrow-up"></i> - Expense
+            </button>
+          </div>
+        </div>
+
+        <!-- 1. KPI Cards Grid -->
+        <div class="kpi-grid">
+          <!-- Total Income -->
+          <div class="kpi-card kpi-income">
+            <div class="kpi-icon"><i class="fas fa-arrow-trend-up"></i></div>
+            <div class="kpi-details">
+              <div class="kpi-label">Total Income</div>
+              <div class="kpi-value" id="kpiTotalIncome">$0.00</div>
+              <div class="kpi-subtext" style="color: var(--income);"><i class="fas fa-shield-alt"></i> Cumulative Inflow</div>
+            </div>
+          </div>
+
+          <!-- Total Expenses -->
+          <div class="kpi-card kpi-expense">
+            <div class="kpi-icon"><i class="fas fa-arrow-trend-down"></i></div>
+            <div class="kpi-details">
+              <div class="kpi-label">Total Expenses</div>
+              <div class="kpi-value" id="kpiTotalExpense">$0.00</div>
+              <div class="kpi-subtext" style="color: var(--expense);"><i class="fas fa-receipt"></i> Cumulative Outflow</div>
+            </div>
+          </div>
+
+          <!-- Net Balance -->
+          <div class="kpi-card kpi-balance" id="balanceKpiCard">
+            <div class="kpi-icon"><i class="fas fa-scale-balanced"></i></div>
+            <div class="kpi-details">
+              <div class="kpi-label">Remaining Balance</div>
+              <div class="kpi-value" id="kpiNetBalance">$0.00</div>
+              <div class="kpi-subtext" id="kpiSavingsRate">0.0% savings rate</div>
+            </div>
+          </div>
+
+          <!-- Monthly Expense -->
+          <div class="kpi-card kpi-monthly">
+            <div class="kpi-icon"><i class="fas fa-calendar-check"></i></div>
+            <div class="kpi-details">
+              <div class="kpi-label">This Month's Outflow</div>
+              <div class="kpi-value" id="kpiThisMonthExpense">$0.00</div>
+              <div class="kpi-subtext"><i class="fas fa-clock"></i> Current Billing Cycle</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Interactive Charts Grid -->
+        <div class="charts-grid">
+          <!-- Category-wise Expense Chart -->
+          <div class="card chart-card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <i class="fas fa-chart-pie"></i> Category-wise Expenses
+              </h2>
+              <a href="expenses.html" class="btn btn-secondary btn-sm">View Expenses &rarr;</a>
+            </div>
+            <div class="chart-container">
+              <canvas id="categoryExpenseChart"></canvas>
+            </div>
+            <div class="category-pills-list" id="categoryPillsList">
+              <!-- Dynamically populated category pills -->
+            </div>
+          </div>
+
+          <!-- Monthly Income vs Expense Comparison Bar Chart -->
+          <div class="card chart-card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <i class="fas fa-chart-column"></i> Monthly Cashflow (Income vs Expense)
+              </h2>
+              <a href="reports.html" class="btn btn-secondary btn-sm">Full Report &rarr;</a>
+            </div>
+            <div class="chart-container">
+              <canvas id="monthlyComparisonChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Recent Transactions Table -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="fas fa-list-ul"></i> Recent Transactions
+            </h2>
+            <div style="display: flex; gap: 0.5rem;">
+              <a href="expenses.html" class="btn btn-secondary btn-sm">All Expenses</a>
+              <a href="income.html" class="btn btn-secondary btn-sm">All Income</a>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Description</th>
+                  <th>Category</th>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="recentTransactionsTbody">
+                <!-- Dynamically rendered rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="empty-state" id="recentEmptyState" style="display: none;">
+            <i class="fas fa-receipt"></i>
+            <h4>No transactions found</h4>
+            <p>Record your first income or expense transaction to see it reflected on the dashboard.</p>
+            <button class="btn btn-primary btn-sm" onclick="openAddTransactionModal('EXPENSE')">
+              <i class="fas fa-plus"></i> Add Transaction
+            </button>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Add / Edit Transaction Modal -->
+  <div class="modal-overlay" id="transactionModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitle">
+          <i class="fas fa-plus-circle" style="color: var(--secondary);"></i> Add New Transaction
+        </h3>
+        <button class="modal-close-btn" onclick="closeTransactionModal()">&times;</button>
+      </div>
+
+      <form id="transactionForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="txType">Transaction Type *</label>
+            <select class="form-control" id="txType" required>
+              <option value="EXPENSE">Expense (Money Out)</option>
+              <option value="INCOME">Income (Money In)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="txTitle">Title / Description *</label>
+            <input type="text" class="form-control" id="txTitle" placeholder="e.g. Grocery Supermarket or Client Payment" maxlength="150" required>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label class="form-label" for="txAmount">Amount ($) *</label>
+              <input type="number" step="0.01" min="0.01" class="form-control" id="txAmount" placeholder="0.00" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="txCategory">Category *</label>
+              <select class="form-control" id="txCategory" required>
+                <!-- Populated dynamically based on type -->
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label class="form-label" for="txDate">Transaction Date *</label>
+              <input type="date" class="form-control" id="txDate" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="txPayment">Payment Method</label>
+              <select class="form-control" id="txPayment">
+                <option value="Cash">Cash</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="Debit Card">Debit Card</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="PayPal">PayPal</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="txNotes">Optional Notes</label>
+            <textarea class="form-control" id="txNotes" placeholder="Additional details, receipts or memo..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeTransactionModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveTransactionBtn">
+            <i class="fas fa-check"></i> Save Transaction
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" id="deleteConfirmModal">
+    <div class="modal-dialog" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 class="modal-title" style="color: var(--expense);">
+          <i class="fas fa-exclamation-triangle"></i> Confirm Delete
+        </h3>
+        <button class="modal-close-btn" onclick="closeDeleteModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">
+          Are you sure you want to permanently delete transaction <strong id="deleteTxTitle" style="color: var(--text-primary);"></strong>?
+        </p>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">
+          This action will immediately update your cashflow totals and cannot be undone.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+        <button type="button" class="btn btn-outline-danger" id="confirmDeleteBtn" onclick="executeDeleteTransaction()">
+          <i class="fas fa-trash-alt"></i> Delete Permanently
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer"></div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="PersonalExpenseTracker" default="war" basedir=".">
+    <description>
+        Ant Build Script for Personal Expense Tracker Web Application
+        Targets: clean, init, compile, war, deploy
+    </description>
+
+    <!-- Load external properties -->
+    <property file="build.properties"/>
+
+    <!-- Set default fallback properties -->
+    <property name="app.name" value="PersonalExpenseTracker"/>
+    <property name="src.dir" location="src"/>
+    <property name="web.dir" location="WebContent"/>
+    <property name="lib.dir" location="lib"/>
+    <property name="build.dir" location="build"/>
+    <property name="classes.dir" location="${build.dir}/classes"/>
+    <property name="dist.dir" location="dist"/>
+    <property name="war.file" location="${dist.dir}/${app.name}.war"/>
+
+    <!-- Compilation Classpath -->
+    <path id="compile.classpath">
+        <fileset dir="${lib.dir}">
+            <include name="**/*.jar"/>
+        </fileset>
+        <!-- Include Tomcat servlet-api if catalina.home is specified -->
+        <fileset dir="${tomcat.home}/lib" erroronmissingdir="false">
+            <include name="servlet-api.jar"/>
+            <include name="jsp-api.jar"/>
+        </fileset>
+    </path>
+
+    <!-- Target: Clean -->
+    <target name="clean" description="Remove build and distribution directories">
+        <echo message="[Ant] Cleaning build artifacts..."/>
+        <delete dir="${build.dir}"/>
+        <delete dir="${dist.dir}"/>
+    </target>
+
+    <!-- Target: Init -->
+    <target name="init" depends="clean" description="Create directory structure">
+        <echo message="[Ant] Initializing build directories..."/>
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${classes.dir}"/>
+        <mkdir dir="${dist.dir}"/>
+    </target>
+
+    <!-- Target: Compile -->
+    <target name="compile" depends="init" description="Compile Java source code">
+        <echo message="[Ant] Compiling Java source files..."/>
+        <javac srcdir="${src.dir}"
+               destdir="${classes.dir}"
+               classpathref="compile.classpath"
+               includeantruntime="false"
+               debug="true"
+               encoding="UTF-8">
+            <compilerarg value="-Xlint:-options"/>
+        </javac>
+
+        <!-- Copy properties and resource files into classes directory -->
+        <copy todir="${classes.dir}">
+            <fileset dir="${src.dir}">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <!-- Target: WAR Packaging -->
+    <target name="war" depends="compile" description="Package application into a deployable WAR">
+        <echo message="[Ant] Packaging ${app.name}.war..."/>
+        <war destfile="${war.file}" webxml="${web.dir}/WEB-INF/web.xml">
+            <!-- Include static web assets (HTML, CSS, JS, images) -->
+            <fileset dir="${web.dir}">
+                <exclude name="WEB-INF/web.xml"/>
+                <exclude name="WEB-INF/classes/**"/>
+            </fileset>
+            <!-- Include compiled servlet classes and resources -->
+            <classes dir="${classes.dir}"/>
+            <!-- Include runtime jar dependencies -->
+            <lib dir="${web.dir}/WEB-INF/lib">
+                <include name="*.jar"/>
+            </lib>
+        </war>
+        <echo message="[Ant] Build successful! WAR generated at: ${war.file}"/>
+    </target>
+
+    <!-- Target: Deploy to local Tomcat -->
+    <target name="deploy" depends="war" description="Copy WAR to Tomcat webapps directory">
+        <available file="${tomcat.webapps}" type="dir" property="tomcat.present"/>
+        <fail unless="tomcat.present" message="Tomcat webapps directory not found at '${tomcat.webapps}'. Please check build.properties."/>
+        
+        <echo message="[Ant] Deploying ${war.file} to ${tomcat.webapps}..."/>
+        <copy file="${war.file}" todir="${tomcat.webapps}" overwrite="true"/>
+        <copy file="${war.file}" tofile="${tomcat.webapps}/ROOT.war" overwrite="true"/>
+        <echo message="[Ant] Deployed successfully. Access via http://localhost:8080/${app.name}/ or http://localhost:8080/"/>
+    </target>
+
+</project>

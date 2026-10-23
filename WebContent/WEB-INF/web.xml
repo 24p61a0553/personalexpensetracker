@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+                             http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+         version="4.0"
+         metadata-complete="true">
+
+    <display-name>Personal Expense Tracker</display-name>
+    <description>Enterprise Personal Expense &amp; Income Tracker with Financial Analytics</description>
+
+    <!-- 1. CORS and Character Encoding Filter -->
+    <filter>
+        <filter-name>CorsAndEncodingFilter</filter-name>
+        <filter-class>com.expensetracker.filter.CorsAndEncodingFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>CorsAndEncodingFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- 2. Servlet Declarations -->
+    <servlet>
+        <servlet-name>DashboardServlet</servlet-name>
+        <servlet-class>com.expensetracker.controller.DashboardServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>DashboardServlet</servlet-name>
+        <url-pattern>/api/dashboard</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>TransactionServlet</servlet-name>
+        <servlet-class>com.expensetracker.controller.TransactionServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TransactionServlet</servlet-name>
+        <url-pattern>/api/transactions</url-pattern>
+        <url-pattern>/api/transactions/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ReportServlet</servlet-name>
+        <servlet-class>com.expensetracker.controller.ReportServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ReportServlet</servlet-name>
+        <url-pattern>/api/reports</url-pattern>
+        <url-pattern>/api/reports/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>CategoryServlet</servlet-name>
+        <servlet-class>com.expensetracker.controller.CategoryServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>CategoryServlet</servlet-name>
+        <url-pattern>/api/categories</url-pattern>
+        <url-pattern>/api/categories/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- 3. Session Configuration -->
+    <session-config>
+        <session-timeout>240</session-timeout>
+        <cookie-config>
+            <http-only>true</http-only>
+            <secure>false</secure>
+        </cookie-config>
+    </session-config>
+
+    <!-- 4. Default Welcome File (Opens directly to the dashboard, NO login/register) -->
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
+
+</web-app>

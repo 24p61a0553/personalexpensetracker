@@ -1,0 +1,39 @@
+# Build and Distribution Artifacts
+build/
+dist/
+*.war
+*.class
+
+# Temporary and log files
+*.log
+*.tmp
+err.tmp
+
+# IDE & Editor Settings
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+.vscode/
+
+# Operating System specific
+Thumbs.db
+.DS_Store
+
+# Local sensitive overrides (never push your local passwords!)
+tomcat_db.properties
+local.properties
+# Database credentials and environment files
+.env
+.env.*
+!.env.example
+db.properties
+*.pem
+*.key
+
+# Generated build files
+build/
+dist/
+*.war
+*.class
